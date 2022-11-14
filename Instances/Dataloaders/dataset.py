@@ -13,7 +13,7 @@ class RE_Dataset(torch.utils.data.Dataset):
 
   def __getitem__(self, idx):  
     item = {key: val[idx].clone().detach() for key, val in self.pair_dataset.items()}
-    if len(self.targets) != 0: # predict가 아니라면 label도 같이 반환해줍니다
+    if len(self.labels) != 0: # predict가 아니라면 label도 같이 반환해줍니다
         item['labels'] = torch.tensor(self.labels[idx])
 
     
