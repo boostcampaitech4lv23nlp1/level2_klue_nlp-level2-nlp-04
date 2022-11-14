@@ -34,7 +34,10 @@ class Dataloader(pl.LightningDataModule):
         # deadlock에 걸리는 경우가 존재해서 use_fast를 False로 둠
         self.tokenizer = transformers.AutoTokenizer.from_pretrained(self.model_name, use_fast=False)
         
-        self.tokenizer.model_max_length = 256 # 곧 다이나믹 패딩으로 바꿀 예정
+        # https://www.youtube.com/watch?v=7q5NyFT8REg 
+        # https://huggingface.co/course/chapter3/2?fw=pt
+        self.data_collator = transformers.DataCollatorWithPadding(self.tokenizer)
+    
 
         tokens = ['""']  # 추가할 토큰들 지정 ex) "" 토큰
         self.new_token_count = self.tokenizer.add_tokens(tokens)  # vocab에 추가를 하며 실제로 새롭게 추가된 토큰의 수를 반환해줍니다.
@@ -130,20 +133,20 @@ class Dataloader(pl.LightningDataModule):
             self.test_dataset = RE_Dataset(test_inputs, test_labels)
         
             predict_data = pd.read_csv(self.predict_path)
-            predict_inputs, predict_targets = self.preprocessing(predict_data, False)
+            predict_inputs, predict_targets = self.preprocessing(predict_data, False) #predict는 label이 없으므로 False를 넘겨줍니다
             self.predict_dataset = RE_Dataset(predict_inputs, predict_targets)
 
     def train_dataloader(self):
-        return torch.utils.data.DataLoader(self.train_dataset, batch_size=self.batch_size, shuffle=self.shuffle)
+        return torch.utils.data.DataLoader(self.train_dataset, batch_size=self.batch_size, shuffle=self.shuffle, collate_fn=self.data_collator)
 
     def val_dataloader(self):
-        return torch.utils.data.DataLoader(self.val_dataset, batch_size=self.batch_size)
+        return torch.utils.data.DataLoader(self.val_dataset, batch_size=self.batch_size, collate_fn=self.data_collator)
 
     def test_dataloader(self):
-        return torch.utils.data.DataLoader(self.test_dataset, batch_size=self.batch_size)
+        return torch.utils.data.DataLoader(self.test_dataset, batch_size=self.batch_size, collate_fn=self.data_collator)
 
     def predict_dataloader(self):
-        return torch.utils.data.DataLoader(self.predict_dataset, batch_size=self.batch_size)
+        return torch.utils.data.DataLoader(self.predict_dataset, batch_size=self.batch_size, collate_fn=self.data_collator)
 
     def new_vocab_size(self):
         return self.new_token_count + self.tokenizer.vocab_size # 새로운 vocab 사이즈를 반환합니다
