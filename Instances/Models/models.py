@@ -57,6 +57,8 @@ class Model(pl.LightningModule):
 
     def training_step(self, batch, batch_idx):
         items = batch
+        print(batch["input_ids"].shape)
+        
         logits = self(items)
         loss = self.loss_func(logits, items['labels'].long())
         self.log("train_loss", loss)
@@ -65,6 +67,8 @@ class Model(pl.LightningModule):
 
     def validation_step(self, batch, batch_idx):
         items = batch
+        # print(batch["input_ids"].shape)
+        
         logits = self(items)
         loss = self.loss_func(logits, items['labels'].long())
         self.log("val_loss", loss)
