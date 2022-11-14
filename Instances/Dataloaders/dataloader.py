@@ -67,13 +67,13 @@ class Dataloader(pl.LightningDataModule):
     def tokenizing(self, dataframe):
         """ tokenizer에 따라 sentence를 tokenizing 합니다."""
         concat_entity = []
-        for e01, e02 in zip(dataframe['subject_entity'], dataframe['object_entity']):
+        for e01, e02 in zip(dataframe['subject_entity'], dataframe['object_entity']): 
             temp = ''
             temp = e01 + self.tokenizer.sep_token + e02  # [SEP] -> self.tokenizer.sep_token
             concat_entity.append(temp)
         tokenized_sentences =self.tokenizer(
             concat_entity,
-            list(dataframe['sentence']),
+            list(dataframe['sentence']),  # [CLS](sub[SEP]object_entity)[SEP]sentence[SEP] 형태, sentence 부분이 1로, 나머지는 0으로 세그먼트 임베딩이 될 것 같습니다
             return_tensors="pt",
             padding=True,
             truncation=True,
@@ -82,7 +82,7 @@ class Dataloader(pl.LightningDataModule):
         return tokenized_sentences
 
     # predict 빼고 전부 동일한 전처리
-    def preprocessing(self, dataframe, labels_exist=True): #전체 전처리 과정을 모두 거쳐서 dataset input 형태로 구성할 수 있도록 하고 predict일 땐 빈 배열 반환ㄴ
+    def preprocessing(self, dataframe, labels_exist=True): #전체 전처리 과정을 모두 거쳐서 dataset input 형태로 구성할 수 있도록 하고 predict일 땐 빈 배열 반환
         """ 처음 불러온 csv 파일을 원하는 형태의 DataFrame으로 변경 시켜줍니다."""
         subject_entity = []
         object_entity = []
@@ -123,8 +123,6 @@ class Dataloader(pl.LightningDataModule):
         
             print("train data len : ", len(train_labels))
             print("valid data len : ", len(val_labels))
-
-            
             
         else:
             test_data = pd.read_csv(self.test_path)
