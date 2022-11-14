@@ -22,6 +22,7 @@ def init(): # args : 실행시 입력하는 인자, conf : yaml 파일에 저장
     args, _ = parser.parse_known_args()
     conf = OmegaConf.load(f"./Config/{args.config}.yaml")
 
+    # 재현성을 위한 시드 고정
     SEED = conf.utils.seed
     random.seed(SEED)
     np.random.seed(SEED)
@@ -33,10 +34,10 @@ def init(): # args : 실행시 입력하는 인자, conf : yaml 파일에 저장
 
 if __name__ == "__main__":
 
-    args, conf = init()
+    args, conf = init()  # args는 초기에 시작하기 위한 인자를, conf는 경로 및 하이퍼파라미터를 작성한 yaml 파일을 사용합니다.
 
     if args.mode == "train" or args.mode == "t":
-        if conf.k_fold.use_k_fold:  # num_folds 변수 확인
+        if conf.k_fold.use_k_fold:  # num_folds 변수 확인, True라면 k폴드를 아니라면 일반 함수를 선택합니다
             train.k_fold_train(args, conf)
         else:
             train.train(args, conf)
@@ -45,7 +46,7 @@ if __name__ == "__main__":
         if args.saved_model is None:
             print("경로를 입력해주세요")
         elif conf.k_fold.use_k_fold:
-            print("K-Fold 추가 학습 불가능")
+            print("K-Fold 추가 학습 불가능!!")
         else:
             train.continue_train(args, conf)
 
