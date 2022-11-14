@@ -1,0 +1,39 @@
+path: # 보통 훈련에 70%, 검증 15%, 테스트 15% 사용한다고 함
+  train_path: ../dataset/train/train.csv  #32469개  (train, dev, test로 갈껀지 아니면 train, dev만 하고 test는 맡길껀지)
+  dev_path: None
+  test_path: ../dataset/train/test.csv
+  predict_path: ../dataset/test/test_data.csv  #7764개
+  save_path: SaveModels/
+
+data:
+  shuffle: True
+  train_ratio: 0.8
+
+model:
+  model_name: klue/roberta-small
+  class_id: 0
+  
+train:
+  max_epoch: 1
+  batch_size: 16
+  lr: 5e-5
+  loss: ce
+  use_freeze: False
+  
+utils:
+  seed: 42
+  monitor: val_loss
+  patience: 25
+  top_k: 3
+
+k_fold:
+  use_k_fold: False
+  num_folds: 3
+  num_split: 5
+  
+wandb:
+  project: My Base Line
+
+
+# 개인적인 tip으론 yaml 파일명에 해당 설정을 통해 얻은 성능을 함께 기록해두면 나중에 앙상블할 모델을 찾거나 재현할 때 편합니다
+# 앞으로 모델 구조를 여기 안에 적어놔야겠다....
