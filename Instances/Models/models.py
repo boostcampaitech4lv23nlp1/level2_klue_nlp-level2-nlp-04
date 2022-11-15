@@ -51,18 +51,20 @@ class Model(pl.LightningModule):
         if self.use_freeze:
             self.freeze()
 
-    def forward(self, items):
-        x = self.plm(input_ids=items['input_ids'], attention_mask=items['attention_mask'], token_type_ids=items['token_type_ids'])["logits"]
+    def forward(self, items):  ## **items
+        x = self.plm(input_ids=items['input_ids'], attention_mask=items['attention_mask'], token_type_ids=items['token_type_ids'])["logits"] # cls -> classifier 한 결과를 뱉음
         return x
 
     def training_step(self, batch, batch_idx):
         items = batch
-        print(batch["input_ids"].shape)
+        # print(batch["input_ids"].shape)
         
         logits = self(items)
+        # print(items['labels'])
+        # print(logits)
         loss = self.loss_func(logits, items['labels'].long())
         self.log("train_loss", loss)
-
+        
         return loss
 
     def validation_step(self, batch, batch_idx):
@@ -72,14 +74,16 @@ class Model(pl.LightningModule):
         logits = self(items)
         loss = self.loss_func(logits, items['labels'].long())
         self.log("val_loss", loss)
-
+        # print(items['labels'])
+        # metric.compute_metrics(logits)
+        
         return loss
 
     def test_step(self, batch, batch_idx):
         items = batch
         logits = self(items)
         loss = self.loss_func(logits, items['labels'].long())
-        self.log("val_loss", loss)
+        
 
     def predict_step(self, batch, batch_idx):
         items = batch
