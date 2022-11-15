@@ -25,7 +25,7 @@ def klue_re_micro_f1(preds, labels):
     return sklearn.metrics.f1_score(labels, preds, average="micro", labels=label_indices) * 100.0
 
 
-# TODO: auprc 구현 X
+
 def klue_re_auprc(probs, labels):
     """KLUE-RE AUPRC (with no_relation)"""
     labels = np.eye(30)[labels] # 원핫 인코딩 해주는 부분
