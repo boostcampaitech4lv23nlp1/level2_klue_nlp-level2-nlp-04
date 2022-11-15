@@ -42,7 +42,8 @@ if __name__ == "__main__":
 
     if args.mode == "train" or args.mode == "t":
         if conf.k_fold.use_k_fold:  # num_folds 변수 확인, True라면 k폴드를 아니라면 일반 함수를 선택합니다
-            train.k_fold_train(args, conf)
+            pass
+            # train.k_fold_train(args, conf)
         else:
             train.train(args, conf)
 
@@ -52,7 +53,8 @@ if __name__ == "__main__":
         elif conf.k_fold.use_k_fold:
             print("K-Fold 추가 학습 불가능!!")
         else:
-            train.continue_train(args, conf)
+            pass
+            # train.continue_train(args, conf)
 
     elif args.mode == "exp" or args.mode == "e":
         exp_count = int(input("실험할 횟수를 입력해주세요 "))
@@ -63,7 +65,8 @@ if __name__ == "__main__":
             print("경로를 입력해주세요")
         else:
             if conf.k_fold.use_k_fold:  # num_folds 변수 확인
-                inference.k_fold_inference(args, conf)
+                pass
+                # inference.k_fold_inference(args, conf)
             else:
                 inference.inference(args, conf)
 
