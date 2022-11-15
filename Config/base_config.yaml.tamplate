@@ -15,14 +15,15 @@ model:
   
 train:
   max_epoch: 1
-  batch_size: 16
+  batch_size: 32
   lr: 5e-5
   loss: ce
   use_freeze: False
   
 utils:
   seed: 42
-  monitor: val_loss
+  early_stop_monitor: val_loss
+  best_save_monitor: val_micro_f1
   patience: 25
   top_k: 3
 
