@@ -206,4 +206,4 @@ requirements.txt
 ._*
 *.pkl
 
-README.md
+logs/
