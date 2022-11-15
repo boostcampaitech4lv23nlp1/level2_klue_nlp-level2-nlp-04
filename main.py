@@ -17,7 +17,7 @@ def init():  # args : 실행시 입력하는 인자, conf : yaml 파일에 저�
         "--saved_model",
         "-s",
         default=None,
-        help="저장된 모델의 파일 경로를 입력해주세요. 예시: save_models/klue/roberta-small/epoch=?-step=?.ckpt 또는 save_models/model.pt",
+        help="저장된 모델의 파일 경로를 입력해주세요. 예시: SaveModels/klue/roberta-small_colorful-sweep-5/epoch=0-test_micro_f1=66.49635639313826.ckpt",
     )
     args, _ = parser.parse_known_args()
     conf = OmegaConf.load(f"./Config/{args.config}.yaml")
