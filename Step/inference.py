@@ -7,7 +7,12 @@ import Instances.instance as instance
 
 def inference(args, conf):
 
-    trainer = pl.Trainer(accelerator='gpu', devices=1, max_epochs=conf.train.max_epoch, log_every_n_steps=1)
+    trainer = pl.Trainer(
+        accelerator="gpu",
+        devices=1,
+        max_epochs=conf.train.max_epoch,
+        log_every_n_steps=1,
+    )
 
     dataloader, model, args, conf = instance.load_instance(args, conf)
 
