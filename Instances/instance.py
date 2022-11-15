@@ -22,22 +22,3 @@ def load_instance(args, conf):
     conf.path.save_path = save_path + "/"
     conf.model.model_name = "/".join(model_name.split("/")[1:])
     return dataloader, model, args, conf
-
-
-# def kfold_new_instance(conf, k):
-#     k_dataloader = KFoldDataloader(conf, k)
-#     k_model = Model(conf, k_dataloader.new_vocab_size())
-#     return k_dataloader, k_model
-
-
-# def kfold_load_instance(args, conf, k):
-#     k_dataloader, k_model = kfold_new_instance(conf, k)
-
-#     model_name = "/".join(args.saved_model.split("/")[1:3])
-#     conf.model.model_name = model_name
-
-#     if args.saved_model.split(".")[-1] == "ckpt":
-#         exit("saved_model 파일 오류, k_fold 설정 확인!")
-#     k_model = k_model.load_from_checkpoint(args.saved_model + f"/{k+1}-Fold.ckpt")
-
-#     return k_dataloader, k_model
