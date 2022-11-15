@@ -13,10 +13,13 @@ def train(args, conf):
     dataloader, model = instance.new_instance(conf)
     wandb_logger = WandbLogger(project=project_name)
 
-    save_path = f"{conf.path.save_path}{conf.model.model_name}_{wandb_logger.experiment.name}/"
+    save_path = (
+        f"{conf.path.save_path}{conf.model.model_name}_{wandb_logger.experiment.name}/"
+    )
 
     trainer = pl.Trainer(
-        accelerator='gpu', devices=1,
+        accelerator="gpu",
+        devices=1,
         max_epochs=conf.train.max_epoch,
         log_every_n_steps=1,
         logger=wandb_logger,
@@ -36,11 +39,11 @@ def train(args, conf):
         ],
     )
     trainer.fit(model=model, datamodule=dataloader)
-    test_micro_f1=trainer.test(model=model, datamodule=dataloader)
+    test_micro_f1 = trainer.test(model=model, datamodule=dataloader)
     wandb.finish()
-    
-    
+
     # 마지막 모델을 저장합니다
     test_micro_f1 = test_micro_f1[0]["test_micro_f1"]
-    trainer.save_checkpoint(f"{save_path}epoch={conf.train.max_epoch-1}-test_micro_f1={test_micro_f1}.ckpt")
-
+    trainer.save_checkpoint(
+        f"{save_path}epoch={conf.train.max_epoch-1}-test_micro_f1={test_micro_f1}.ckpt"
+    )
