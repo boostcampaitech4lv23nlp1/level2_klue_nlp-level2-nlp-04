@@ -53,8 +53,7 @@ if __name__ == "__main__":
         elif conf.k_fold.use_k_fold:
             print("K-Fold 추가 학습 불가능!!")
         else:
-            pass
-            # train.continue_train(args, conf)
+            train.continue_train(args, conf)
 
     elif args.mode == "exp" or args.mode == "e":
         exp_count = int(input("실험할 횟수를 입력해주세요 "))
