@@ -8,20 +8,20 @@ def new_instance(conf):
     return dataloader, model
 
 
-# def load_instance(args, conf):
-#     dataloader, model = new_instance(conf)
-#     save_path = "/".join(args.saved_model.split("/")[:-1])
+def load_instance(args, conf):
+    dataloader, model = new_instance(conf)
+    save_path = "/".join(args.saved_model.split("/")[:-1])
 
-#     model_name = "/".join(args.saved_model.split("/")[1:-1]).split("_")[0]
+    model_name = "/".join(args.saved_model.split("/")[1:-1]).split("_")[0]
 
-#     if args.saved_model.split(".")[-1] != "ckpt":
-#         exit("saved_model 파일 오류")
+    if args.saved_model.split(".")[-1] != "ckpt":
+        exit("saved_model 파일 오류")
 
-#     model = model.load_from_checkpoint(args.saved_model)
+    model = model.load_from_checkpoint(args.saved_model)
 
-#     conf.path.save_path = save_path + "/"
-#     conf.model.model_name = "/".join(model_name.split("/")[1:])
-#     return dataloader, model, args, conf
+    conf.path.save_path = save_path + "/"
+    conf.model.model_name = "/".join(model_name.split("/")[1:])
+    return dataloader, model, args, conf
 
 
 # def kfold_new_instance(conf, k):
