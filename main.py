@@ -8,7 +8,7 @@ from omegaconf import OmegaConf
 from Step import train, inference, sweep
 
 
-def init(): # args : 실행시 입력하는 인자, conf : yaml 파일에 저장된 하이퍼파라미터
+def init():  # args : 실행시 입력하는 인자, conf : yaml 파일에 저장된 하이퍼파라미터
     parser = argparse.ArgumentParser()
     parser.add_argument("--mode", "-m", required=True)
     parser.add_argument("--config", "-c", type=str, default="base_config")
@@ -32,9 +32,13 @@ def init(): # args : 실행시 입력하는 인자, conf : yaml 파일에 저장
     torch.use_deterministic_algorithms(True)
     return args, conf
 
+
 if __name__ == "__main__":
 
-    args, conf = init()  # args는 초기에 시작하기 위한 인자를, conf는 경로 및 하이퍼파라미터를 작성한 yaml 파일을 사용합니다.
+    (
+        args,
+        conf,
+    ) = init()  # args는 초기에 시작하기 위한 인자를, conf는 경로 및 하이퍼파라미터를 작성한 yaml 파일을 사용합니다.
 
     if args.mode == "train" or args.mode == "t":
         if conf.k_fold.use_k_fold:  # num_folds 변수 확인, True라면 k폴드를 아니라면 일반 함수를 선택합니다
