@@ -1,13 +1,9 @@
-import pickle as pickle
-
 import pandas as pd
 import pytorch_lightning as pl
 import torch
 import transformers
-from sklearn.model_selection import KFold, StratifiedShuffleSplit
 from tqdm.auto import tqdm
 
-import Utils.utils as utils
 from Instances.Dataloaders.dataset import RE_Dataset
 
 
@@ -46,30 +42,6 @@ class Dataloader(pl.LightningDataModule):
         self.new_token_count = self.tokenizer.add_tokens(
             tokens
         )  # vocab에 추가를 하며 실제로 새롭게 추가된 토큰의 수를 반환해줍니다.
-
-    def label_to_num(self, label):
-        """
-        문자열 라벨을 숫자로 변환 합니다.
-        """
-        num_label = []
-        with open("dict_label_to_num.pkl", "rb") as f:
-            dict_label_to_num = pickle.load(f)
-        for v in label:
-            num_label.append(dict_label_to_num[v])
-
-        return num_label
-
-    def num_to_label(self, label):
-        """
-        숫자로 되어 있던 class를 원본 문자열 라벨로 변환 합니다.
-        """
-        origin_label = []
-        with open("dict_num_to_label.pkl", "rb") as f:
-            dict_num_to_label = pickle.load(f)
-        for v in label:
-            origin_label.append(dict_num_to_label[v])
-
-        return origin_label
 
     def tokenizing(self, dataframe):
         """tokenizer에 따라 sentence를 tokenizing 합니다."""
