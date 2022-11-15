@@ -5,7 +5,7 @@ import transformers
 from tqdm.auto import tqdm
 
 from Instances.Dataloaders.dataset import RE_Dataset
-
+import Utils.labels_ids as labels_ids
 
 # (train+dev), test, predict  # train 데이터의 일부를 dev 데이터 셋으로 사용합니다
 class Dataloader(pl.LightningDataModule):
@@ -92,7 +92,7 @@ class Dataloader(pl.LightningDataModule):
         # 현재 train_dataset = load_data("../dataset/train/train.csv")까지 거친 상태
 
         if labels_exist:  # train, dev, test
-            labels = self.label_to_num(
+            labels = labels_ids.label_to_num(
                 preprocessing_dataframe["label"].values
             )  # labels를 붙여줍니다
         else:  # predict
