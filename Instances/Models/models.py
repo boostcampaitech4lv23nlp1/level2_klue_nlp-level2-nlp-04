@@ -8,6 +8,7 @@ import torch.nn as nn
 import torchmetrics
 import pytorch_lightning as pl
 import Utils.utils as utils
+import Utils.metric as metric
 
 
 class Model(pl.LightningModule):
@@ -57,11 +58,8 @@ class Model(pl.LightningModule):
 
     def training_step(self, batch, batch_idx):
         items = batch
-        # print(batch["input_ids"].shape)
         
         logits = self(items)
-        # print(items['labels'])
-        # print(logits)
         loss = self.loss_func(logits, items['labels'].long())
         self.log("train_loss", loss)
         
@@ -69,21 +67,22 @@ class Model(pl.LightningModule):
 
     def validation_step(self, batch, batch_idx):
         items = batch
-        # print(batch["input_ids"].shape)
         
         logits = self(items)
         loss = self.loss_func(logits, items['labels'].long())
-        self.log("val_loss", loss)
-        # print(items['labels'])
-        # metric.compute_metrics(logits)
         
+        self.log("val_loss", loss)
+        self.log("val_micro_f1",metric.klue_re_micro_f1(logits.argmax(-1).cpu().numpy(), items['labels'].cpu().numpy())) # f1 score를 계산합니다
+        # TODO: auprc 구현 log 할 수 있도록 하여야함
+        # TODO: 마지막에 계산된 값만 저장됨, 평균을 취하거나 한번에 기록될 수 있게 조치를 취햐아함
         return loss
 
     def test_step(self, batch, batch_idx):
         items = batch
         logits = self(items)
-        loss = self.loss_func(logits, items['labels'].long())
         
+        self.log("test_micro_f1",metric.klue_re_micro_f1(logits.argmax(-1).cpu().numpy(), items['labels'].cpu().numpy())) # f1 score를 계산합니다
+
 
     def predict_step(self, batch, batch_idx):
         items = batch
