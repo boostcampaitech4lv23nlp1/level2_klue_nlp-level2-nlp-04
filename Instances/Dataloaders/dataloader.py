@@ -15,7 +15,7 @@ from Instances.Dataloaders.dataset import RE_Dataset
 class Dataloader(pl.LightningDataModule):
     def __init__(self, conf):
         super().__init__()
-        self.model_name = conf.model.model_name  # backbone 모델
+        self.model_name = conf.model.model_name  # backbone 모델 , tokenzieze
         self.batch_size = conf.train.batch_size  # 배치 사이즈
         self.shuffle = conf.data.shuffle  # shuffle 유무
         self.train_ratio = conf.data.train_ratio  # train과 dev 셋의 데이터 떼올 양
@@ -36,7 +36,7 @@ class Dataloader(pl.LightningDataModule):
         
         # https://www.youtube.com/watch?v=7q5NyFT8REg 
         # https://huggingface.co/course/chapter3/2?fw=pt
-        self.data_collator = transformers.DataCollatorWithPadding(self.tokenizer)
+        self.data_collator = transformers.DataCollatorWithPadding(self.tokenizer) # 다이나믹 패딩 유튜브 -> 잘안되는거 같음 (train 237로만 잘르고 dev 241)
     
 
         tokens = ['""']  # 추가할 토큰들 지정 ex) "" 토큰
@@ -119,7 +119,7 @@ class Dataloader(pl.LightningDataModule):
             self.train_dataset = RE_Dataset(train_inputs, train_labels)
             
             
-            val_data = total_data.drop(train_data.index)
+            val_data = total_data.drop(train_data.index) # dev
             val_inputs, val_labels = self.preprocessing(val_data)
             self.val_dataset = RE_Dataset(val_inputs, val_labels)
            
@@ -127,7 +127,7 @@ class Dataloader(pl.LightningDataModule):
             print("train data len : ", len(train_labels))
             print("valid data len : ", len(val_labels))
             
-        else:
+        else: # inference 완성 오늘 할 애정
             test_data = pd.read_csv(self.test_path)
             test_inputs, test_labels = self.preprocessing(test_data)
             self.test_dataset = RE_Dataset(test_inputs, test_labels)
@@ -148,5 +148,5 @@ class Dataloader(pl.LightningDataModule):
     def predict_dataloader(self):
         return torch.utils.data.DataLoader(self.predict_dataset, batch_size=self.batch_size, collate_fn=self.data_collator)
 
-    def new_vocab_size(self):
+    def new_vocab_size(self): # 임베딩 사이즈를 맞춰줘야함 -> 5개추가 원래의 vocab + 5
         return self.new_token_count + self.tokenizer.vocab_size # 새로운 vocab 사이즈를 반환합니다
