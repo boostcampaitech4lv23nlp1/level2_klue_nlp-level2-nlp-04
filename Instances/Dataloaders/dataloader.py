@@ -124,13 +124,11 @@ class Dataloader(pl.LightningDataModule):
             self.test_dataset = RE_Dataset(test_inputs, test_labels)
 
             predict_data = pd.read_csv(self.predict_path)
-            print(predict_data.head())
             predict_inputs, predict_labels = self.preprocessing(
                 predict_data, False
             )  # predict는 label이 없으므로 False를 넘겨줍니다
 
             self.predict_dataset = RE_Dataset(predict_inputs, predict_labels)
-            print(self.predict_dataset)
 
     def train_dataloader(self):
         return torch.utils.data.DataLoader(
