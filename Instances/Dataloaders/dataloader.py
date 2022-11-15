@@ -96,7 +96,7 @@ class Dataloader(pl.LightningDataModule):
                 preprocessing_dataframe["label"].values
             )  # labels를 붙여줍니다
         else:  # predict
-            labels = []
+            labels = preprocessing_dataframe["label"].values
         inputs = self.tokenizing(preprocessing_dataframe)  # input 데이터를 토큰화해줍니다
 
         return inputs, labels  # 전처리한 inputs와 labels 반환합니다
@@ -124,10 +124,13 @@ class Dataloader(pl.LightningDataModule):
             self.test_dataset = RE_Dataset(test_inputs, test_labels)
 
             predict_data = pd.read_csv(self.predict_path)
-            predict_inputs, predict_targets = self.preprocessing(
+            print(predict_data.head())
+            predict_inputs, predict_labels = self.preprocessing(
                 predict_data, False
             )  # predict는 label이 없으므로 False를 넘겨줍니다
-            self.predict_dataset = RE_Dataset(predict_inputs, predict_targets)
+
+            self.predict_dataset = RE_Dataset(predict_inputs, predict_labels)
+            print(self.predict_dataset)
 
     def train_dataloader(self):
         return torch.utils.data.DataLoader(
