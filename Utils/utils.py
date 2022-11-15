@@ -22,7 +22,8 @@ def best_save(save_path, top_k, monitor, mode, filename):
 
 loss_dict = {"l1": loss.L1_loss, "mse": loss.MSE_loss, "bce": loss.BCEWithLogitsLoss, "rmse": loss.RMSE_loss, "huber": loss.HUBER_loss, "ce":loss.CrossEntropyLoss}
 
+
 monitor_dict = {
     "val_loss": {"monitor": "val_loss", "mode": "min"},
-    "val_pearson": {"monitor": "val_pearson", "mode": "max"},
+    "val_micro_f1": {"monitor": "val_micro_f1", "mode": "max"},
 }
