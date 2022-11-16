@@ -4,7 +4,11 @@ from Instances.Models.models import Model
 
 def new_instance(conf):
     dataloader = Dataloader(conf)
-    model = Model(conf, dataloader.new_vocab_size())
+    if conf.model.class_id == 0:
+        model = Model(conf, dataloader.new_vocab_size())
+    else:
+        print("해당하는 모델이 없습니다")
+        exit(1)
     return dataloader, model
 
 
