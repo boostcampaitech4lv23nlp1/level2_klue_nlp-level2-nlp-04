@@ -41,6 +41,17 @@ class Model(pl.LightningModule):
                 single_emb = self.plm.roberta.embeddings.token_type_embeddings
                 self.plm.roberta.embeddings.token_type_embeddings = torch.nn.Embedding(2, single_emb.embedding_dim)
                 self.plm.roberta.embeddings.token_type_embeddings.weight = torch.nn.Parameter(single_emb.weight.repeat([2, 1]))
+
+            elif type(self.plm).__name__ == "ElectraForSequenceClassification":  # electra 부분
+                single_emb = self.plm.electra.embeddings.token_type_embeddings
+                self.plm.electra.embeddings.token_type_embeddings = torch.nn.Embedding(2, single_emb.embedding_dim)
+                self.plm.electra.embeddings.token_type_embeddings.weight = torch.nn.Parameter(single_emb.weight.repeat([2, 1]))
+
+            elif type(self.plm).__name__ == "BigBirdForSequenceClassification":  # bigbird 부분
+                single_emb = self.plm.bert.embeddings.token_type_embeddings
+                self.plm.bert.embeddings.token_type_embeddings = torch.nn.Embedding(2, single_emb.embedding_dim)
+                self.plm.bert.embeddings.token_type_embeddings.weight = torch.nn.Parameter(single_emb.weight.repeat([2, 1]))
+
             else:
                 print("model을 추가해주세요")
                 exit(1)
