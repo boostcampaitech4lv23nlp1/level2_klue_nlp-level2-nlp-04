@@ -21,9 +21,7 @@ class Model(pl.LightningModule):
         self.lr = conf.train.lr
         self.model_config = transformers.AutoConfig.from_pretrained(self.model_name)
         self.model_config.num_labels = 30
-        self.plm = transformers.AutoModelForSequenceClassification.from_pretrained(
-            self.model_name, config=self.model_config
-        )
+        self.plm = transformers.AutoModelForSequenceClassification.from_pretrained(self.model_name, config=self.model_config)
 
         ## print문 주석 해제해서 임베딩 차원이 어떻게 바뀌는지 한번 확인해보세요
         # print(self.plm)
@@ -35,24 +33,14 @@ class Model(pl.LightningModule):
         if self.plm.config.type_vocab_size == 1:
             self.plm.config.type_vocab_size = 2
             if type(self.plm).__name__ == "BertForSequenceClassification":  # bert 부분
-                single_emb = self.plm.roberta.embeddings.token_type_embeddings
-                self.plm.bert.embeddings.token_type_embeddings = torch.nn.Embedding(
-                    2, single_emb.embedding_dim
-                )
-                self.plm.bert.embeddings.token_type_embeddings.weight = (
-                    torch.nn.Parameter(single_emb.weight.repeat([2, 1]))
-                )
+                single_emb = self.plm.bert.embeddings.token_type_embeddings
+                self.plm.bert.embeddings.token_type_embeddings = torch.nn.Embedding(2, single_emb.embedding_dim)
+                self.plm.bert.embeddings.token_type_embeddings.weight = torch.nn.Parameter(single_emb.weight.repeat([2, 1]))
 
-            elif (
-                type(self.plm).__name__ == "RobertaForSequenceClassification"
-            ):  # roberta 부분
+            elif type(self.plm).__name__ == "RobertaForSequenceClassification":  # roberta 부분
                 single_emb = self.plm.roberta.embeddings.token_type_embeddings
-                self.plm.roberta.embeddings.token_type_embeddings = torch.nn.Embedding(
-                    2, single_emb.embedding_dim
-                )
-                self.plm.roberta.embeddings.token_type_embeddings.weight = (
-                    torch.nn.Parameter(single_emb.weight.repeat([2, 1]))
-                )
+                self.plm.roberta.embeddings.token_type_embeddings = torch.nn.Embedding(2, single_emb.embedding_dim)
+                self.plm.roberta.embeddings.token_type_embeddings.weight = torch.nn.Parameter(single_emb.weight.repeat([2, 1]))
             else:
                 print("model을 추가해주세요")
                 exit(1)
@@ -66,11 +54,7 @@ class Model(pl.LightningModule):
             self.freeze()
 
     def forward(self, items):  ## **items
-        x = self.plm(
-            input_ids=items["input_ids"],
-            attention_mask=items["attention_mask"],
-            token_type_ids=items["token_type_ids"],
-        )[
+        x = self.plm(input_ids=items["input_ids"], attention_mask=items["attention_mask"], token_type_ids=items["token_type_ids"],)[
             "logits"
         ]  # cls -> classifier 한 결과를 뱉음
         return x
@@ -93,9 +77,7 @@ class Model(pl.LightningModule):
         self.log("val_loss", loss)
         self.log(
             "val_micro_f1",
-            metric.klue_re_micro_f1(
-                logits.argmax(-1).cpu().numpy(), items["labels"].cpu().numpy()
-            ),
+            metric.klue_re_micro_f1(logits.argmax(-1).cpu().numpy(), items["labels"].cpu().numpy()),
         )  # f1 score를 계산합니다
         # TODO: auprc 구현 log 할 수 있도록 하여야함
         # TODO: 마지막에 계산된 값만 저장됨, 평균을 취하거나 한번에 기록될 수 있게 조치를 취햐아함
@@ -107,9 +89,7 @@ class Model(pl.LightningModule):
 
         self.log(
             "test_micro_f1",
-            metric.klue_re_micro_f1(
-                logits.argmax(-1).cpu().numpy(), items["labels"].cpu().numpy()
-            ),
+            metric.klue_re_micro_f1(logits.argmax(-1).cpu().numpy(), items["labels"].cpu().numpy()),
         )  # f1 score를 계산합니다
 
     def predict_step(self, batch, batch_idx):
@@ -119,7 +99,8 @@ class Model(pl.LightningModule):
         return logits.squeeze()
 
     def configure_optimizers(self):
-        optimizer = torch.optim.AdamW(self.parameters(), lr=self.lr)
+        optimizer = torch.optim.AdamW(self.parameters(), lr=self.lr)  # 추후에 알려드릴 예정
+        # sweep config, 스케줄러, 예시로 모델 구조 쌓는법
         return optimizer
 
     def freeze(self):
