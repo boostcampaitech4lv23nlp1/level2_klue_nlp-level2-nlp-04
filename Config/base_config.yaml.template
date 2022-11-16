@@ -1,29 +1,31 @@
 path:
   train_path: ../dataset/train/train.csv
-pl  predict_path: ../dataset/test/test_data.csv
+  dev_path: None # 대화 : train, test 나눔 -> 
+  test_path: ../dataset/train/test.csv
+  predict_path: ../dataset/test/test_data.csv
   save_path: SaveModels/
 
 data:
   shuffle: True
-  train_ratio: 0.2  # train(train+dev) dev(test셋) test : 라벨링
+  train_ratio: 0.1  # train(train+dev) dev(test셋) test : 라벨링
 
 model:
-  model_name: klue/roberta-small
+  model_name: monologg/koelectra-base-v3-discriminator
   class_id: 0 # __getattr__ () :
 
 train:
   max_epoch: 1
   batch_size: 32
-  lr: 5e-5
+  lr: 1e-5
   loss: ce
   use_freeze: False
   
 utils:
-  seed: 42
-  early_stop_monitor: val_loss
-  best_save_monitor: val_micro_f1
+  seed: 42 # 마음대로 하셔도 됩니다.
+  early_stop_monitor: val_loss # early
+  best_save_monitor: val_micro_f1 # best
   patience: 25
-  top_k: 3
+  top_k: 3 # best
 
 k_fold:
   use_k_fold: False
