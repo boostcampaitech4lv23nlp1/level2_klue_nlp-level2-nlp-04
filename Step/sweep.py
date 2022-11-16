@@ -11,13 +11,10 @@ def sweep(args, conf, exp_count):
     project_name = conf.wandb.project
 
     sweep_config = {
-        "method": "bayes",
+        # "method": "bayes",
+        "method": "grid",
         "parameters": {
-            "lr": {
-                "distribution": "uniform",
-                "min": 1e-5,
-                "max": 3e-5,
-            },
+            "lr": {"values": [5e-6, 6e-6, 7e-6, 8e-6, 9e-6, 10e-6]},
         },
         # "early_terminate": {
         #     "type": "hyperband",
@@ -47,9 +44,7 @@ def sweep(args, conf, exp_count):
             logger=wandb_logger,
             callbacks=[
                 utils.early_stop(
-                    monitor=utils.monitor_dict[conf.utils.early_stop_monitor][
-                        "monitor"
-                    ],
+                    monitor=utils.monitor_dict[conf.utils.early_stop_monitor]["monitor"],
                     mode=utils.monitor_dict[conf.utils.early_stop_monitor]["mode"],
                     patience=conf.utils.patience,
                 ),
@@ -68,13 +63,11 @@ def sweep(args, conf, exp_count):
 
         # 마지막 모델을 저장합니다
         test_micro_f1 = test_micro_f1[0]["test_micro_f1"]
-        trainer.save_checkpoint(
-            f"{save_path}epoch={conf.train.max_epoch-1}-test_micro_f1={test_micro_f1}.ckpt"
-        )
+        trainer.save_checkpoint(f"{save_path}epoch={conf.train.max_epoch-1}-test_micro_f1={test_micro_f1}.ckpt")
 
     sweep_id = wandb.sweep(
         sweep=sweep_config,
         project=project_name,
     )
 
-    wandb.agent(sweep_id=sweep_id, function=sweep_train, count=exp_count)
+    wandb.agent(sweep_id=sweep_id, function=sweep_train),  # count=exp_count)
