@@ -11,6 +11,8 @@ import Utils.utils as utils
 import Utils.metric as metric
 from . import lr_scheduler_Func
 
+# TODO: auprc log 할 수 있도록 하여야 함
+
 
 class Model(pl.LightningModule):
     def __init__(self, conf, new_vocab_size):
@@ -84,24 +86,32 @@ class Model(pl.LightningModule):
 
         logits = self(items)
         loss = self.loss_func(logits, items["labels"].long())
+        pred = logits.argmax(-1)  # pred 한 라벨
 
-        self.log("val_loss", loss)
-        self.log(
-            "val_micro_f1",
-            metric.klue_re_micro_f1(logits.argmax(-1).cpu().numpy(), items["labels"].cpu().numpy()),
-        )  # f1 score를 계산합니다
-        # TODO: auprc 구현 log 할 수 있도록 하여야함
-        # TODO: 마지막에 계산된 값만 저장됨, 평균을 취하거나 한번에 기록될 수 있게 조치를 취햐아함
-        return loss
+        return {"val_loss": loss, "pred": pred, "label": items["labels"]}
+
+    def validation_epoch_end(self, outputs):
+        pred_all = torch.concat([x["pred"] for x in outputs])  # 배치당 예측한 라벨들을 전부 concat 하여 전체 예측 텐서 생성
+        label_all = torch.concat([x["label"] for x in outputs])  # 배치당 정답 라벨을 전부 concat하여 전체 정답 텐서 생성
+        val_f1 = metric.klue_re_micro_f1(pred_all.cpu().numpy(), label_all.cpu().numpy())  # micro_f1 계산
+        avg_loss = torch.stack([x["val_loss"] for x in outputs]).mean()  # 배치당 loss를 전부 stack으로 받아 평균 취함
+
+        self.log("val_micro_f1", val_f1)
+        self.log("val_loss", avg_loss)
 
     def test_step(self, batch, batch_idx):
         items = batch
-        logits = self(items)
 
-        self.log(
-            "test_micro_f1",
-            metric.klue_re_micro_f1(logits.argmax(-1).cpu().numpy(), items["labels"].cpu().numpy()),
-        )  # f1 score를 계산합니다
+        logits = self(items)
+        pred = logits.argmax(-1)  # pred 한 라벨
+        return {"pred": pred, "label": items["labels"]}
+
+    def test_epoch_end(self, outputs):
+        pred_all = torch.concat([x["pred"] for x in outputs])  # 배치당 예측한 라벨들을 전부 concat 하여 전체 예측 텐서 생성
+        label_all = torch.concat([x["label"] for x in outputs])  # 배치당 정답 라벨을 전부 concat하여 전체 정답 텐서 생성
+        test_f1 = metric.klue_re_micro_f1(pred_all.cpu().numpy(), label_all.cpu().numpy())  # micro_f1 계산
+
+        self.log("test_micro_f1", test_f1)
 
     def predict_step(self, batch, batch_idx):
         items = batch
