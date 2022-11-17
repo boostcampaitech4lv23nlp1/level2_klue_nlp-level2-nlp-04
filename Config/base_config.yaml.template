@@ -18,6 +18,7 @@ train:
   batch_size: 32
   lr: 1e-5
   loss: ce
+  warm_up: 0
   use_freeze: False
   
 utils:

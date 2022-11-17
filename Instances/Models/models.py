@@ -24,7 +24,7 @@ class Model(pl.LightningModule):
         self.model_config = transformers.AutoConfig.from_pretrained(self.model_name)
         self.model_config.num_labels = 30
         self.plm = transformers.AutoModelForSequenceClassification.from_pretrained(self.model_name, config=self.model_config)
-
+        self.warm_up = conf.train.warm_up
         ## print문 주석 해제해서 임베딩 차원이 어떻게 바뀌는지 한번 확인해보세요
         # print(self.plm)
 
@@ -119,10 +119,12 @@ class Model(pl.LightningModule):
 
         return logits.squeeze()
 
+    ## Warm-up 단계 밑의 링크 참고하여 작성
+    ## https://pytorch-lightning.readthedocs.io/en/stable/common/optimization.html
     def configure_optimizers(self):
         optimizer = torch.optim.AdamW(self.parameters(), lr=self.lr)  # 추후에 알려드릴 예정
-        # sweep config, 스케줄러, 예시로 모델 구조 쌓는법
-        return optimizer
+        scheduler = LambdaLR(optimizer=optimizer, lr_lambda=lambda step: min(1.0, float(step + 1) / (self.warm_up + 1)))
+        return [optimizer], [{"scheduler": scheduler, "interval": "step"}]
 
     def freeze(self):
         for name, param in self.plm.named_parameters():
