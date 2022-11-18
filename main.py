@@ -63,8 +63,7 @@ if __name__ == "__main__":
             print("경로를 입력해주세요")
         else:
             if conf.k_fold.use_k_fold:  # num_folds 변수 확인
-                pass
-                # inference.k_fold_inference(args, conf)
+                inference.k_fold_inference(args, conf)
             else:
                 inference.inference(args, conf)
 
