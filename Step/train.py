@@ -92,7 +92,7 @@ def k_fold_train(args, conf):
         k_dataloader, k_model = instance.kfold_new_instance(conf, k)
         name_ = f"{k+1}th_fold"
         wandb_logger = WandbLogger(project=project_name, name=name_)
-        save_path = f"{conf.path.save_path}{conf.model.model_name}/{args.config}_K_fold/"
+        save_path = f"{conf.path.save_path}{conf.model.model_name}/{args.config}_{conf.k_fold.num_folds}_fold/"
         trainer = pl.Trainer(
             accelerator="gpu",
             devices=1,
