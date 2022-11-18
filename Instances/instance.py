@@ -1,11 +1,17 @@
 from Instances.Dataloaders.dataloader import Dataloader
-from Instances.Models.models import Model
+from Instances.Models.models import Model, ExampleModel1, ExampleModel2
 
 
 def new_instance(conf):
     dataloader = Dataloader(conf)
     if conf.model.class_id == 0:
         model = Model(conf, dataloader.new_vocab_size())
+    elif conf.model.class_id == 1:
+        model = ExampleModel1(conf, dataloader.new_vocab_size())
+        print(model)
+    elif conf.model.class_id == 2:
+        model = ExampleModel2(conf, dataloader.new_vocab_size())
+        print(model)
     else:
         print("해당하는 모델이 없습니다")
         exit(1)
