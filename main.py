@@ -42,8 +42,7 @@ if __name__ == "__main__":
 
     if args.mode == "train" or args.mode == "t":
         if conf.k_fold.use_k_fold:  # num_folds 변수 확인, True라면 k폴드를 아니라면 일반 함수를 선택합니다
-            pass
-            # train.k_fold_train(args, conf)
+            train.k_fold_train(args, conf)
         else:
             train.train(args, conf)
 
