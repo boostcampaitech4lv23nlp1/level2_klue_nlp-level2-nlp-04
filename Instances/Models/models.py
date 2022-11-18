@@ -123,7 +123,7 @@ class ExampleModel1(pl.LightningModule):
         self.model_config = transformers.AutoConfig.from_pretrained(self.model_name)  # classifier의 input 차원을 얻어오기 위해 모델 정보를 불러옵니다
         self.input_dim = self.model_config.hidden_size  # input 차원입니다(cls토큰의 차원)
         self.num_labels = 30  # 최종 output label의 개수입니다(차원)
-        # self.input_dim = self.model_config.d_model  # 가끔 다른 모델 구조는 input 차원을 d_model로 사용하기도 합니다입니다(cls토큰의 차원)
+        # self.input_dim = self.model_config.d_model  # 가끔 다른 모델 구조는 input 차원을 d_model로 사용하기도 합니다(cls토큰의 차원)
 
         self.plm = transformers.AutoModel.from_pretrained(self.model_name)
         self.warm_up = conf.train.warm_up
