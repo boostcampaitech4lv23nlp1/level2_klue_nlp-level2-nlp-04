@@ -58,7 +58,7 @@ class KFoldDataloader(pl.LightningDataModule):
         return tokenized_sentences
 
     # predict 빼고 전부 동일한 전처리
-    def preprocessing(self, dataframe, labels_exist=True):  # 전체 전처리 과정을 모두 거쳐서 dataset input 형태로 구성할 수 있도록 하고 predict일 땐 빈 배열 반환
+    def preprocessing(self, dataframe):  # 전체 전처리 과정을 모두 거쳐서 dataset input 형태로 구성할 수 있도록 하고 predict일 땐 빈 배열 반환
         """처음 불러온 csv 파일을 원하는 형태의 DataFrame으로 변경 시켜줍니다."""
         subject_entity = []
         object_entity = []
@@ -82,7 +82,7 @@ class KFoldDataloader(pl.LightningDataModule):
 
         # 현재 train_dataset = load_data("../dataset/train/train.csv")까지 거친 상태
 
-        if labels_exist:  # train, dev, test
+        if type(preprocessing_dataframe["label"].values[0]) == str:  # train, dev, test
             labels = labels_ids.label_to_num(preprocessing_dataframe["label"].values)  # labels를 붙여줍니다
         else:  # predict
             labels = preprocessing_dataframe["label"].values
@@ -120,7 +120,7 @@ class KFoldDataloader(pl.LightningDataModule):
             self.test_dataset = RE_Dataset(test_inputs, test_labels)
 
             predict_data = pd.read_csv(self.predict_path)
-            predict_inputs, predict_labels = self.preprocessing(predict_data, False)  # predict는 label이 없으므로 False를 넘겨줍니다
+            predict_inputs, predict_labels = self.preprocessing(predict_data)
 
             self.predict_dataset = RE_Dataset(predict_inputs, predict_labels)
 
