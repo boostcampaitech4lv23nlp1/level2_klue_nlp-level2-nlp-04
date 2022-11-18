@@ -174,12 +174,10 @@ class ExampleModel1(pl.LightningModule):
         )
 
     def forward(self, items):  ## **items
-        x = self.plm(
-            input_ids=items["input_ids"],
-            attention_mask=items["attention_mask"],
-            token_type_ids=items["token_type_ids"],
-        )  # pooler까지 거친 최종적인 output입니다
-        x = x.pooler_output  # 위의 값에서 cls 토큰을 받아옵니다
+        x = self.plm(input_ids=items["input_ids"], attention_mask=items["attention_mask"], token_type_ids=items["token_type_ids"],)[
+            0
+        ]  # pooler까지 거친 최종적인 output입니다
+        x = x[:, 0, :]
         x = self.classifier(x)  # 분류기를 거칩니다
         return x  # 분류기를 거친 최종 30차원 탠서를 반환해줍니다
 
@@ -257,12 +255,10 @@ class ExampleModel2(ExampleModel1):
         self.classifier2 = nn.Sequential(nn.Linear(self.input_dim + self.hidden_dim, self.num_labels))
 
     def forward(self, items):  ## **items
-        x = self.plm(
-            input_ids=items["input_ids"],
-            attention_mask=items["attention_mask"],
-            token_type_ids=items["token_type_ids"],
-        )  # pooler까지 거친 최종적인 output입니다
-        x = x.pooler_output  # 위의 값에서 cls 토큰을 받아옵니다
+        x = self.plm(input_ids=items["input_ids"], attention_mask=items["attention_mask"], token_type_ids=items["token_type_ids"],)[
+            0
+        ]  # 최종적인 output입니다
+        x = x[:, 0, :]  # 배치의, 0번째 인덱스(CLS)의 모든 요소(768)을 가져옵니다
         y = self.classifier(x)
         x = torch.cat((x, y), dim=1)
         x = self.classifier2(x)
