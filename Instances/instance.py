@@ -1,4 +1,5 @@
 from Instances.Dataloaders.dataloader import Dataloader
+from Instances.Dataloaders.k_fold_dataloader import KFoldDataloader
 from Instances.Models.models import Model, ExampleModel1, ExampleModel2
 
 
@@ -32,3 +33,18 @@ def load_instance(args, conf):
     conf.path.save_path = save_path + "/"
     conf.model.model_name = "/".join(model_name.split("/")[1:])
     return dataloader, model, args, conf
+
+
+def kfold_new_instance(conf, k):
+    k_dataloader = KFoldDataloader(conf, k)
+    if conf.model.class_id == 0:
+        k_model = Model(conf, k_dataloader.new_vocab_size())
+    elif conf.model.class_id == 1:
+        k_model = ExampleModel1(conf, k_dataloader.new_vocab_size())
+    elif conf.model.class_id == 2:
+        k_model = ExampleModel2(conf, k_dataloader.new_vocab_size())
+    else:
+        print("해당하는 모델이 없습니다")
+        exit(1)
+
+    return k_dataloader, k_model
