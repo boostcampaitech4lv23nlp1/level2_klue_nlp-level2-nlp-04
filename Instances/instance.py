@@ -48,3 +48,17 @@ def kfold_new_instance(conf, k):
         exit(1)
 
     return k_dataloader, k_model
+
+
+def kfold_load_instance(args, conf, k):
+    k_dataloader, k_model = kfold_new_instance(conf, k)
+
+    model_name = "/".join(args.saved_model.split("/")[1:3])
+    conf.model.model_name = model_name
+
+    if args.saved_model.split(".")[-1] == "ckpt":
+        print("saved_model 파일 오류, k_fold 설정 확인!")
+        exit(1)
+    k_model = k_model.load_from_checkpoint(args.saved_model + f"/{k+1}-Fold.ckpt")
+
+    return k_dataloader, k_model
