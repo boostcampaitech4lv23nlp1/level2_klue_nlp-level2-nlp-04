@@ -5,7 +5,7 @@ import torch
 import pytorch_lightning as pl
 
 from omegaconf import OmegaConf
-from Step import train, inference, sweep
+from Step import train, inference, sweep, analysis
 
 
 def init():  # args : 실행시 입력하는 인자, conf : yaml 파일에 저장된 하이퍼파라미터
@@ -68,6 +68,13 @@ if __name__ == "__main__":
                 # inference.k_fold_inference(args, conf)
             else:
                 inference.inference(args, conf)
+    
+    elif args.mode == "analysis" or args.mode == "a":
+        if args.saved_model is None:
+            print("경로를 입력해주세요")
+        else:
+            analysis.confusion_matrix(args, conf)
+            analysis.error_analysis(args, conf)
 
     else:
         print("모드를 다시 설정해주세요 ")
@@ -75,3 +82,4 @@ if __name__ == "__main__":
         print("continue     : c,\tcontinue")
         print("sweep        : e,\texp")
         print("inference    : i,\tinference")
+        print("analysis     : a,\tanalysis")
