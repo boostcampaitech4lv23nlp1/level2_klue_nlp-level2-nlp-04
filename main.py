@@ -73,7 +73,7 @@ if __name__ == "__main__":
         if args.saved_model is None:
             print("경로를 입력해주세요")
         else:
-            analysis.confusion_matrix(args, conf)
+            analysis.plot_confusion_matrix(args, conf)
             analysis.error_analysis(args, conf)
 
     else:
