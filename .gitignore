@@ -207,3 +207,5 @@ requirements.txt
 *.pkl
 
 logs/
+
+analysis/
