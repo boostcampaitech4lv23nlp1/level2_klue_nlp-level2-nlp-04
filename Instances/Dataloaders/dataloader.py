@@ -16,6 +16,7 @@ class Dataloader(pl.LightningDataModule):
         self.shuffle = conf.data.shuffle  # shuffle 유무
         self.train_ratio = conf.data.train_ratio  # train과 dev 셋의 데이터 떼올 양
         self.seed = conf.utils.seed  # seed
+        self.entity_marker_type = conf.data.entity_marker_type  # 엔티티 위치 표현 유형
 
         self.train_path = conf.path.train_path  # train+dev data set 경로
         self.test_path = conf.path.test_path  # test data set 경로
@@ -37,19 +38,58 @@ class Dataloader(pl.LightningDataModule):
         tokens = ['""']  # 추가할 토큰들 지정 ex) "" 토큰
         self.new_token_count = self.tokenizer.add_tokens(tokens)  # vocab에 추가를 하며 실제로 새롭게 추가된 토큰의 수를 반환해줍니다.
 
-    def tokenizing(self, dataframe):
-        """tokenizer에 따라 sentence를 tokenizing 합니다."""
+    def tokenizing(self, dataframe, entity_marker_type):
+        """
+        entity_marker_type:
+            - baseline : entity_marker_type 미사용
+            - typed_entity_marker: [SUBJ-NER] subject [/SUBJ-NER], [OBJ-NER] obj [/OBJ-NER]
+            - typed_entity_marker_punct: @ * subject ner type * subject @, # ^ object ner type ^ object #
+        """
+        sents = []
         concat_entity = []
-        for e01, e02 in zip(dataframe["subject_entity"], dataframe["object_entity"]):
-            temp = ""
-            temp = e01 + self.tokenizer.sep_token + e02  # [SEP] -> self.tokenizer.sep_token
-            concat_entity.append(temp)
+        special_tokens = []
+
+        for sent, subj, subj_start, subj_end, subj_type, obj, obj_start, obj_end, obj_type in zip(
+            dataframe["sentence"], dataframe["subject_entity"], dataframe["subject_start"], dataframe["subject_end"], dataframe["subject_type"], dataframe["object_entity"], dataframe["object_start"], dataframe["object_end"], dataframe["object_type"]
+        ):
+            if entity_marker_type == "typed_entity_marker":
+                temp_subj_type_start = f"[SUBJ-{str(subj_type)}]"
+                temp_subj_type_end = f"[/SUBJ-{str(subj_type)}]"
+                temp_obj_type_start = f"[OBJ-{str(obj_type)}]"
+                temp_obj_type_end = f"[/OBJ-{str(obj_type)}]"
+
+                for special_token in [temp_subj_type_start, temp_subj_type_end, temp_obj_type_start, temp_obj_type_end]:
+                    if special_token not in special_tokens:
+                        special_tokens.append(special_token)
+
+                temp_subj = f"{temp_subj_type_start} {str(subj)} {temp_subj_type_end}"
+                temp_obj = f"{temp_obj_type_start} {str(obj)} {temp_obj_type_end}"
+
+            elif entity_marker_type == "typed_entity_marker_punct":
+                special_tokens = ["@", "#"]
+                temp_subj = f"@ * {str(subj_type)} * {str(subj)} @"
+                temp_obj = f"# ^ {str(obj_type)} ^ {str(obj)} #"
+
+            elif entity_marker_type == "baseline":
+                temp_subj = str(subj)
+                temp_obj = str(obj)
+
+            if subj_start < obj_start:
+                sent = sent[:subj_start] + temp_subj + sent[subj_end + 1 : obj_start] + temp_obj + sent[obj_end + 1 :]
+            else:
+                sent = sent[:obj_start] + temp_obj + sent[obj_end + 1 : subj_start] + temp_subj + sent[subj_end + 1 :]
+
+            sents.append(sent)
+            concat_entity.append(str(subj) + "[SEP]" + str(obj))
+
+        self.new_token_count += self.tokenizer.add_tokens(special_tokens)
         tokenized_sentences = self.tokenizer(
             concat_entity,
-            list(dataframe["sentence"]),  # [CLS](sub[SEP]object_entity)[SEP]sentence[SEP] 형태, sentence 부분이 1로, 나머지는 0으로 세그먼트 임베딩이 될 것 같습니다
+            sents,
             return_tensors="pt",
             padding=True,
             truncation=True,
+            max_length=256,
             add_special_tokens=True,
         )
         return tokenized_sentences
