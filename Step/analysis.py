@@ -77,7 +77,7 @@ def plot_confusion_matrix(args, conf):
     confmat = confusion_matrix(y_true, y_pred, normalize='true')
 
     sns.set(rc={'figure.figsize':(22,18)})
-    fig = sns.heatmap(confmat).get_figure()
+    fig = sns.heatmap(confmat, annot=True, fmt=".2f").get_figure()
 
     fig.savefig(f'{dir_path}/{file_name}')
 
@@ -150,7 +150,7 @@ def cm_and_error(args, conf):
     confmat = confusion_matrix(y_true, y_pred, normalize='true')
 
     sns.set(rc={'figure.figsize':(22,18)})
-    fig = sns.heatmap(confmat).get_figure()
+    fig = sns.heatmap(confmat, annot=True, fmt='.2f').get_figure()
 
     fig.savefig(f'{dir_path}/cm_{key}.png')
 
