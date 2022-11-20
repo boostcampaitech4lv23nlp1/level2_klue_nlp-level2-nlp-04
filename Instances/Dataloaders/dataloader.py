@@ -81,7 +81,7 @@ class Dataloader(pl.LightningDataModule):
                 sent = sent[:obj_start] + temp_obj + sent[obj_end + 1 : subj_start] + temp_subj + sent[subj_end + 1 :]
 
             sents.append(sent)
-            concat_entity.append(str(subj) + "[SEP]" + str(obj))
+            concat_entity.append(str(subj) + self.tokenizer.sep_token + str(obj))
 
         self.new_token_count += self.tokenizer.add_tokens(special_tokens)
         tokenized_sentences = self.tokenizer(
