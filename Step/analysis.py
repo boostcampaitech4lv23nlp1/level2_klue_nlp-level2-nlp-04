@@ -27,14 +27,6 @@ def get_predictions(args, conf):
     with open('./dict_label_to_num.pkl', 'rb') as f:
         label_to_num = pickle.load(f)
 
-    test = pd.read_csv('../dataset/train/test.csv')
-    y_true = list(test['label'].apply(lambda x: label_to_num[x]))
-
-    test['label'] = test['label'].apply(lambda x: 100)
-    test.to_csv('../dataset/test/test_for_pred.csv', index=False)
-    
-
-
     trainer = pl.Trainer(
         accelerator="gpu",
         devices=1,
@@ -44,13 +36,13 @@ def get_predictions(args, conf):
 
     dataloader, model, args, conf = instance.load_instance(args, conf)
 
-    dataloader.predict_path = '../dataset/test/test_for_pred.csv'
+    dataloader.predict_path = dataloader.test_path
 
-    # trainer.test(model=model, datamodule=dataloader)
     predictions = trainer.predict(model=model, datamodule=dataloader)
 
     predictions = list(i for i in torch.cat(predictions))
 
+    y_true = list(pd.read_csv(dataloader.test_path)['label'].apply(lambda x: label_to_num[x]))
     y_pred = [np.argmax(logit, axis=-1).item() for logit in predictions]
     y_prob = [F.softmax(logit, dim=-1).tolist() for logit in predictions]
 
