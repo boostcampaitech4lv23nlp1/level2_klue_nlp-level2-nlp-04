@@ -37,7 +37,28 @@ class Dataloader(pl.LightningDataModule):
         self.data_collator = transformers.DataCollatorWithPadding(self.tokenizer)  # 다이나믹 패딩 유튜브 -> 잘안되는거 같음 (train 237로만 잘르고 dev 241)
 
         tokens = ['""']  # 추가할 토큰들 지정 ex) "" 토큰
+
         self.new_token_count = self.tokenizer.add_tokens(tokens)  # vocab에 추가를 하며 실제로 새롭게 추가된 토큰의 수를 반환해줍니다.
+
+        special_tokens = self.find_special_token(self.entity_marker_type)  # ({"additional_special_tokens":['aba','adsf']})
+        self.new_special_token_count = self.tokenizer.add_special_tokens({"additional_special_tokens": special_tokens})
+
+    def find_special_token(self, entity_marker_type):
+        special_tokens = []
+        subject_entity_types = ["PER", "ORG"]
+        object_entity_types = ["PER", "ORG", "LOC", "DAT", "POH", "NOH"]
+        if entity_marker_type == "typed_entity_marker":
+            for i in subject_entity_types:
+                for j in ["", "/"]:
+                    special_tokens.append(f"[{j}SUBJ-{i}]")
+            for i in object_entity_types:
+                for j in ["", "/"]:
+                    special_tokens.append(f"[{j}OBJ-{i}]")
+
+        elif entity_marker_type == "typed_entity_marker_punct":
+            special_tokens = ["@", "#"]
+
+        return special_tokens
 
     def tokenizing(self, dataframe, entity_marker_type):
         """
@@ -48,7 +69,6 @@ class Dataloader(pl.LightningDataModule):
         """
         sents = []
         concat_entity = []
-        special_tokens = []
 
         for sent, subj, subj_start, subj_end, subj_type, obj, obj_start, obj_end, obj_type in zip(
             dataframe["sentence"], dataframe["subject_entity"], dataframe["subject_start"], dataframe["subject_end"], dataframe["subject_type"], dataframe["object_entity"], dataframe["object_start"], dataframe["object_end"], dataframe["object_type"]
@@ -59,15 +79,10 @@ class Dataloader(pl.LightningDataModule):
                 temp_obj_type_start = f"[OBJ-{str(obj_type)}]"
                 temp_obj_type_end = f"[/OBJ-{str(obj_type)}]"
 
-                for special_token in [temp_subj_type_start, temp_subj_type_end, temp_obj_type_start, temp_obj_type_end]:
-                    if special_token not in special_tokens:
-                        special_tokens.append(special_token)
-
                 temp_subj = f"{temp_subj_type_start} {str(subj)} {temp_subj_type_end}"
                 temp_obj = f"{temp_obj_type_start} {str(obj)} {temp_obj_type_end}"
 
             elif entity_marker_type == "typed_entity_marker_punct":
-                special_tokens = ["@", "#"]
                 temp_subj = f"@ * {str(subj_type)} * {str(subj)} @"
                 temp_obj = f"# ^ {str(obj_type)} ^ {str(obj)} #"
 
@@ -83,14 +98,12 @@ class Dataloader(pl.LightningDataModule):
             sents.append(sent)
             concat_entity.append(str(subj) + self.tokenizer.sep_token + str(obj))
 
-        self.new_token_count += self.tokenizer.add_tokens(special_tokens)
         tokenized_sentences = self.tokenizer(
             concat_entity,
             sents,
             return_tensors="pt",
             padding=True,
             truncation=True,
-            max_length=256,
             add_special_tokens=True,
         )
         return tokenized_sentences
@@ -189,4 +202,4 @@ class Dataloader(pl.LightningDataModule):
         )
 
     def new_vocab_size(self):  # 임베딩 사이즈를 맞춰줘야함 -> 5개추가 원래의 vocab + 5
-        return self.new_token_count + self.tokenizer.vocab_size  # 새로운 vocab 사이즈를 반환합니다
+        return self.new_token_count + self.new_special_token_count + self.tokenizer.vocab_size  # 새로운 vocab 사이즈를 반환합니다
