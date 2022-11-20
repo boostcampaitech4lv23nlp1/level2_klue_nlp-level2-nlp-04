@@ -6,6 +6,7 @@ from tqdm.auto import tqdm
 
 from Instances.Dataloaders.dataset import RE_Dataset
 import Utils.labels_ids as labels_ids
+from ast import literal_eval
 
 # (train+dev), test, predict  # train 데이터의 일부를 dev 데이터 셋으로 사용합니다
 class Dataloader(pl.LightningDataModule):
@@ -95,35 +96,49 @@ class Dataloader(pl.LightningDataModule):
         return tokenized_sentences
 
     # predict 빼고 전부 동일한 전처리
-    def preprocessing(self, dataframe):  # 전체 전처리 과정을 모두 거쳐서 dataset input 형태로 구성할 수 있도록 하고 predict일 땐 빈 배열 반환
+    def preprocessing(self, dataframe, labels_exist=True):  # 전체 전처리 과정을 모두 거쳐서 dataset input 형태로 구성할 수 있도록 하고 predict일 땐 빈 배열 반환
         """처음 불러온 csv 파일을 원하는 형태의 DataFrame으로 변경 시켜줍니다."""
-        subject_entity = []
-        object_entity = []
-        for i, j in zip(dataframe["subject_entity"], dataframe["object_entity"]):
-            i = i[1:-1].split(",")[0].split(":")[1]
-            j = j[1:-1].split(",")[0].split(":")[1]
+        subject_entity, subject_start, subject_end, subject_type = [], [], [], []
+        object_entity, object_start, object_end, object_type = [], [], [], []
 
-            subject_entity.append(i)
-            object_entity.append(j)
+        for s, o in zip(dataframe["subject_entity"], dataframe["object_entity"]):
+            s_dict = literal_eval(s)
+            o_dict = literal_eval(o)
 
-        # preprocessing을 거쳐서 subject_entity와 object_entity 형태로 넣어줍니다
-        preprocessing_dataframe = pd.DataFrame(
+            subject_entity.append(s_dict["word"])
+            subject_start.append(s_dict["start_idx"])
+            subject_end.append(s_dict["end_idx"])
+            subject_type.append(s_dict["type"])
+
+            object_entity.append(o_dict["word"])
+            object_start.append(o_dict["start_idx"])
+            object_end.append(o_dict["end_idx"])
+            object_type.append(o_dict["type"])
+
+        entity_dataset = pd.DataFrame(
             {
-                "id": dataframe["id"],
-                "sentence": dataframe["sentence"],
                 "subject_entity": subject_entity,
+                "subject_start": subject_start,
+                "subject_end": subject_end,
+                "subject_type": subject_type,
                 "object_entity": object_entity,
-                "label": dataframe["label"],
+                "object_start": object_start,
+                "object_end": object_end,
+                "object_type": object_type,
             }
         )
+        entity_dataset.reset_index(drop=True, inplace=True)
+        all_dataset = dataframe[["id", "sentence", "label"]]
+        all_dataset.reset_index(drop=True, inplace=True)
+        preprocessing_dataframe = pd.concat([all_dataset, entity_dataset], axis=1)
 
         # 현재 train_dataset = load_data("../dataset/train/train.csv")까지 거친 상태
 
-        if type(preprocessing_dataframe["label"].values[0]) == str:  # train, dev, test
+        if labels_exist:  # train, dev, test
             labels = labels_ids.label_to_num(preprocessing_dataframe["label"].values)  # labels를 붙여줍니다
         else:  # predict
             labels = preprocessing_dataframe["label"].values
-        inputs = self.tokenizing(preprocessing_dataframe)  # input 데이터를 토큰화해줍니다
+        inputs = self.tokenizing(preprocessing_dataframe, self.entity_marker_type)  # input 데이터를 토큰화해줍니다
 
         return inputs, labels  # 전처리한 inputs와 labels 반환합니다
 
