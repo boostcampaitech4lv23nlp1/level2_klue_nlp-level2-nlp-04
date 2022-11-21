@@ -2,19 +2,22 @@ import pandas as pd
 import pytorch_lightning as pl
 import torch
 import transformers
+
 from tqdm.auto import tqdm
-from sklearn.model_selection import StratifiedShuffleSplit
+from sklearn.model_selection import KFold
 from Instances.Dataloaders.dataset import RE_Dataset
+
 import Utils.labels_ids as labels_ids
 
 # (train+dev), test, predict  # train 데이터의 일부를 dev 데이터 셋으로 사용합니다
-class Dataloader(pl.LightningDataModule):
-    def __init__(self, conf):
+class KFoldDataloader(pl.LightningDataModule):
+    def __init__(self, conf, k):
         super().__init__()
         self.model_name = conf.model.model_name  # 토크나이저를 받기 위한 backbone 모델의 이름
         self.batch_size = conf.train.batch_size  # 배치 사이즈
         self.shuffle = conf.data.shuffle  # shuffle 유무
-        self.train_ratio = conf.data.train_ratio  # train과 dev 셋의 데이터 떼올 양
+        self.k = k  # 현재 해당하는 dataloader
+        self.num_split = conf.k_fold.num_folds
         self.seed = conf.utils.seed  # seed
 
         self.train_path = conf.path.train_path  # train+dev data set 경로
@@ -90,23 +93,28 @@ class Dataloader(pl.LightningDataModule):
     def setup(self, stage="fit"):  # train, dev, test는 모두 동일한 전처리 과정을 거칩니다
         if stage == "fit":
             total_data = pd.read_csv(self.train_path)
-            split = StratifiedShuffleSplit(n_splits=1, test_size=1 - self.train_ratio, random_state=self.seed)
-            for train_idx, val_idx in split.split(total_data, total_data["label"]):
-                train_data = total_data.loc[train_idx]
-                val_data = total_data.loc[val_idx]
+            kfold = KFold(n_splits=self.num_split, shuffle=self.shuffle, random_state=self.seed)
+            all_splits = [d_i for d_i in kfold.split(total_data)]
 
-            # train_data = total_data.sample(frac=self.train_ratio)  # csv 파일을 불러서 train과 dev로 나눕니다, 기본 baseline의 load_data 과정
-            train_inputs, train_labels = self.preprocessing(train_data)
+            # 데이터 split
+            train_indexes, val_indexes = all_splits[self.k]
+            train_indexes, val_indexes = train_indexes.tolist(), val_indexes.tolist()
+
+            print("Number of splits: \n", self.num_split)
+            print("Fold: \n", self.k)
+            print("Train data len: \n", len(train_indexes))
+            print("Valid data len: \n", len(val_indexes))
+
+            train_inputs, train_labels = self.preprocessing(total_data.loc[train_indexes])
+            val_inputs, val_labels = self.preprocessing(total_data.loc[val_indexes])
+
             self.train_dataset = RE_Dataset(train_inputs, train_labels)
-
-            # val_data = total_data.drop(train_data.index)  # dev
-            val_inputs, val_labels = self.preprocessing(val_data)
             self.val_dataset = RE_Dataset(val_inputs, val_labels)
 
             print("train data len : ", len(train_labels))
             print("valid data len : ", len(val_labels))
 
-        else:  # inference 완성 오늘 할 애정
+        else:
             test_data = pd.read_csv(self.test_path)
             test_inputs, test_labels = self.preprocessing(test_data)
             self.test_dataset = RE_Dataset(test_inputs, test_labels)

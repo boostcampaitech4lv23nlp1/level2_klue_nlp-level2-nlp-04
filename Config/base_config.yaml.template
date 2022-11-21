@@ -29,8 +29,7 @@ utils:
 
 k_fold:
   use_k_fold: False
-  num_folds: 3
-  num_split: 5
+  num_folds: 3 # nums_folds는 fold의 개수
   
 wandb:
   project: level02-nlp-04
