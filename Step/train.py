@@ -21,7 +21,7 @@ def train(args, conf):
         max_epochs=conf.train.max_epoch,
         log_every_n_steps=1,
         logger=wandb_logger,
-        precision=conf.train.precision
+        precision=conf.train.precision,
         callbacks=[
             utils.early_stop(
                 monitor=utils.monitor_dict[conf.utils.early_stop_monitor]["monitor"],
@@ -59,7 +59,7 @@ def continue_train(args, conf):
         max_epochs=conf.train.max_epoch,
         log_every_n_steps=1,
         logger=wandb_logger,
-        precision=conf.train.precision
+        precision=conf.train.precision,
         callbacks=[
             utils.early_stop(
                 monitor=utils.monitor_dict[conf.utils.early_stop_monitor]["monitor"],
