@@ -172,8 +172,8 @@ def cm_and_error(args, conf):
 
     ###
 
-    df = pd.DataFrame({'text': texts, 'loss': losses, 'true': trues, 'pred': preds})
-    df = df.sort_values(by=['loss'], ascending=False)
-    df.to_csv(f'{dir_path}/error_{key}.csv', index=False)
+    error_df = pd.DataFrame({'text': texts, 'loss': losses, 'true': trues, 'pred': preds})
+    error_df = error_df.sort_values(by=['loss'], ascending=False)
+    error_df.to_csv(f'{dir_path}/error_{key}.csv', index=False)
 
     return 0
