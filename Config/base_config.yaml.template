@@ -1,12 +1,13 @@
 path:
-  train_path: ../dataset/train/train.csv
-  test_path: ../dataset/train/test.csv
-  predict_path: ../dataset/test/test_data.csv
+  train_path: ./dataset/train/train.csv
+  test_path: ./dataset/train/test.csv
+  predict_path: ./dataset/test/test_data.csv
   save_path: SaveModels/
 
 data:
   shuffle: True
   train_ratio: 0.1  # fit 과정에서의 train set 비율
+  entity_marker_type: baseline # [baseline, typed_entity_marker, typed_entity_marker_punct]
 
 model:
   model_name: monologg/koelectra-base-v3-discriminator
@@ -29,8 +30,7 @@ utils:
 
 k_fold:
   use_k_fold: False
-  num_folds: 3
-  num_split: 5
+  num_folds: 3 # nums_folds는 fold의 개수
   
 wandb:
   project: level02-nlp-04

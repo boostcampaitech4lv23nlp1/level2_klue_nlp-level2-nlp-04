@@ -199,11 +199,11 @@ output.csv
 
 
 *.yaml
-requirements.txt
-
 
 *.csv
 ._*
 *.pkl
 
 logs/
+
+analysis/
