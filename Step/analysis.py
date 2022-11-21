@@ -42,10 +42,10 @@ def get_predictions(args, conf):
 
     predictions = list(i for i in torch.cat(predictions))
 
-    df = pd.read_csv(dataloader.test_path)
+    test_df = pd.read_csv(dataloader.test_path)
 
-    x_text = list(sent+sub+obj for sent, sub, obj in zip(df['sentence'], df['subject_entity'], df['object_entity']))
-    y_true = list(df['label'].apply(lambda x: label_to_num[x]))
+    x_text = list(sent+sub+obj for sent, sub, obj in zip(test_df['sentence'], test_df['subject_entity'], test_df['object_entity']))
+    y_true = list(test_df['label'].apply(lambda x: label_to_num[x]))
     y_pred = [np.argmax(logit, axis=-1).item() for logit in predictions]
     y_prob = [F.softmax(logit, dim=-1).tolist() for logit in predictions]
 
