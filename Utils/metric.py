@@ -31,10 +31,10 @@ def klue_re_auprc(probs, labels):
     labels = np.eye(30)[labels] # 원핫 인코딩 해주는 부분
 
     score = np.zeros((30,))
-    for c in range(30):
-            targets_c = labels.take([c], axis=1).ravel()
-            preds_c = probs.take([c], axis=1).ravel()
-            precision, recall, _ = sklearn.metrics.precision_recall_curve(targets_c, preds_c)
+    for c in range(30): # c는 각 클래스
+            targets_c = labels.take([c], axis=1).ravel() # c에 대한 정답 레이블 확인 (열 요소 추출)
+            preds_c = probs.take([c], axis=1).ravel() #c에 대한 확률(만약 logit이라면?) 레이블 확인 (열 요소 추출)
+            precision, recall, _ = sklearn.metrics.precision_recall_curve(targets_c, preds_c) # 세번째 반환 값이 바로 임계값, logit의 범위에 따라 자동으로 반환해주는 듯
             score[c] = sklearn.metrics.auc(recall, precision)
     return np.average(score) * 100.0
 
