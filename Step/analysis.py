@@ -6,10 +6,44 @@ import pandas as pd
 import numpy as np
 import torch.nn.functional as F
 import pickle
+import re
 
 from sklearn.metrics import confusion_matrix
 
 from Instances import instance
+
+
+
+def get_punct_text(sent, sub, obj):
+    """텍스트 내의 subject와 object를 강조한 텍스트를 반환
+        “@ SUBJ @ ... # OBJ #” 형태로
+    
+    Args:
+        sent (str): raw text
+        sub (str): subject info
+        obj (str): object info
+
+    Returns:
+        str: sub, obj가 강조된 텍스트
+            ex) "유튜버 도티가 '초통령'다운 사려 깊은 말로 가수 @ 윤민수 @ 씨 아들 # 윤후 # 를 감동시켰다."
+    """
+
+    ### test
+    sent = "유튜버 도티가 '초통령'다운 사려 깊은 말로 가수 윤민수 씨 아들 윤후를 감동시켰다."
+    sub = "{'word': '윤민수', 'start_idx': 28, 'end_idx': 30, 'type': 'PER'}"
+    obj = "{'word': '아들 윤후', 'start_idx': 34, 'end_idx': 38, 'type': 'POH'}"
+
+    sub_dict = {key.strip()[1:-1]:value.strip() for key, value in [item.split(':') for item in sub[1:-1].split(',')]}
+    obj_dict = {key.strip()[1:-1]:value.strip() for key, value in [item.split(':') for item in obj[1:-1].split(',')]}
+
+    sub_word = sub_dict['word'][1:-1].strip()
+    obj_word = obj_dict['word'][1:-1].strip()
+
+    punct_text = sent
+    punct_text = re.sub(sub_word, f" @ {sub_word} @ ", punct_text)
+    punct_text = re.sub(obj_word, f" # {obj_word} # ", punct_text)
+
+    return punct_text
 
 
 
@@ -44,7 +78,7 @@ def get_predictions(args, conf):
 
     test_df = pd.read_csv(dataloader.test_path)
 
-    x_text = list(sent+sub+obj for sent, sub, obj in zip(test_df['sentence'], test_df['subject_entity'], test_df['object_entity']))
+    x_text = list(get_punct_text(sent, sub, obj) for sent, sub, obj in zip(test_df['sentence'], test_df['subject_entity'], test_df['object_entity']))
     y_true = list(test_df['label'].apply(lambda x: label_to_num[x]))
     y_pred = [np.argmax(logit, axis=-1).item() for logit in predictions]
     y_prob = [F.softmax(logit, dim=-1).tolist() for logit in predictions]
