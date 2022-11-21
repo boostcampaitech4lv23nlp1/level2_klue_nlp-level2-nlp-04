@@ -3,7 +3,7 @@ import pytorch_lightning as pl
 import torch
 import transformers
 from tqdm.auto import tqdm
-
+from sklearn.model_selection import StratifiedShuffleSplit
 from Instances.Dataloaders.dataset import RE_Dataset
 import Utils.labels_ids as labels_ids
 from ast import literal_eval
@@ -158,12 +158,16 @@ class Dataloader(pl.LightningDataModule):
     def setup(self, stage="fit"):  # train, dev, test는 모두 동일한 전처리 과정을 거칩니다
         if stage == "fit":
             total_data = pd.read_csv(self.train_path)
+            split = StratifiedShuffleSplit(n_splits=1, test_size=1 - self.train_ratio, random_state=self.seed)
+            for train_idx, val_idx in split.split(total_data, total_data["label"]):
+                train_data = total_data.loc[train_idx]
+                val_data = total_data.loc[val_idx]
 
-            train_data = total_data.sample(frac=self.train_ratio)  # csv 파일을 불러서 train과 dev로 나눕니다, 기본 baseline의 load_data 과정
+            # train_data = total_data.sample(frac=self.train_ratio)  # csv 파일을 불러서 train과 dev로 나눕니다, 기본 baseline의 load_data 과정
             train_inputs, train_labels = self.preprocessing(train_data)
             self.train_dataset = RE_Dataset(train_inputs, train_labels)
 
-            val_data = total_data.drop(train_data.index)  # dev
+            # val_data = total_data.drop(train_data.index)  # dev
             val_inputs, val_labels = self.preprocessing(val_data)
             self.val_dataset = RE_Dataset(val_inputs, val_labels)
 

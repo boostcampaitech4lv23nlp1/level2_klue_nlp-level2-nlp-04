@@ -205,3 +205,5 @@ output.csv
 *.pkl
 
 logs/
+
+analysis/
