@@ -61,7 +61,7 @@ def plot_confusion_matrix(args, conf):
         conf (_type_): conf
 
     Returns:
-        None: .png 확장자로 './analysis/cm_{model_name}.png' 으로 저장
+        None: .png 확장자로 './analysis/cm_{wandb_name}_{epoch}.png' 으로 저장
     """
 
     _, y_true, y_pred, _ = get_predictions(args, conf)
@@ -93,7 +93,7 @@ def error_analysis(args, conf):
         conf (_type_): conf
 
     Returns:
-        None: .csv 확장자로 './analysis/error_{model_name}.csv'로 저장
+        None: .csv 확장자로 './analysis/error_{wandb_name}_{epoch}.csv'로 저장
     """
 
     with open('./dict_num_to_label.pkl', 'rb') as f:
