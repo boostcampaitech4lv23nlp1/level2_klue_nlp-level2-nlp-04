@@ -7,6 +7,7 @@ path:
 data:
   shuffle: True
   train_ratio: 0.1  # fit 과정에서의 train set 비율
+  entity_marker_type: baseline # [baseline, typed_entity_marker, typed_entity_marker_punct]
 
 model:
   model_name: monologg/koelectra-base-v3-discriminator
