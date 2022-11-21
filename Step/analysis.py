@@ -28,16 +28,8 @@ def get_punct_text(sent, sub, obj):
             ex) "유튜버 도티가 '초통령'다운 사려 깊은 말로 가수 @ 윤민수 @ 씨 아들 # 윤후 # 를 감동시켰다."
     """
 
-    ### test
-    sent = "유튜버 도티가 '초통령'다운 사려 깊은 말로 가수 윤민수 씨 아들 윤후를 감동시켰다."
-    sub = "{'word': '윤민수', 'start_idx': 28, 'end_idx': 30, 'type': 'PER'}"
-    obj = "{'word': '아들 윤후', 'start_idx': 34, 'end_idx': 38, 'type': 'POH'}"
-
-    sub_dict = {key.strip()[1:-1]:value.strip() for key, value in [item.split(':') for item in sub[1:-1].split(',')]}
-    obj_dict = {key.strip()[1:-1]:value.strip() for key, value in [item.split(':') for item in obj[1:-1].split(',')]}
-
-    sub_word = sub_dict['word'][1:-1].strip()
-    obj_word = obj_dict['word'][1:-1].strip()
+    sub_word = sub[1:-1].split(",")[0].split(":")[1].strip()[1:-1].strip()
+    obj_word = obj[1:-1].split(",")[0].split(":")[1].strip()[1:-1].strip()
 
     punct_text = sent
     punct_text = re.sub(sub_word, f" @ {sub_word} @ ", punct_text)
@@ -152,11 +144,10 @@ def error_analysis(args, conf):
     loss = torch.nn.CrossEntropyLoss()
 
     for true, pred, prob in zip(y_true, y_pred, y_prob):
-        losses.append(loss(torch.tensor([prob]), torch.tensor([pred])).item())
+        losses.append(round(loss(torch.tensor([prob]), torch.tensor([pred])).item(), 4))
         trues.append(num_to_label[true])
         preds.append(num_to_label[pred])
 
-    ###
 
     error_df = pd.DataFrame({'text': texts, 'loss': losses, 'true': trues, 'pred': preds})
     error_df = error_df.sort_values(by=['loss'], ascending=False)
@@ -200,11 +191,10 @@ def cm_and_error(args, conf):
     loss = torch.nn.CrossEntropyLoss()
 
     for true, pred, prob in zip(y_true, y_pred, y_prob):
-        losses.append(loss(torch.tensor([prob]), torch.tensor([pred])).item())
+        losses.append(round(loss(torch.tensor([prob]), torch.tensor([pred])).item(), 4))
         trues.append(num_to_label[true])
         preds.append(num_to_label[pred])
 
-    ###
 
     error_df = pd.DataFrame({'text': texts, 'loss': losses, 'true': trues, 'pred': preds})
     error_df = error_df.sort_values(by=['loss'], ascending=False)
