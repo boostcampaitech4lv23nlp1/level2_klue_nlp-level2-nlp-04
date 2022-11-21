@@ -200,4 +200,8 @@ def cm_and_error(args, conf):
     error_df = error_df.sort_values(by=['loss'], ascending=False)
     error_df.to_csv(f'{dir_path}/error_{key}.csv', index=False)
 
+
+    ### CE 로스가 큰 100개만 html로 보기
+    error_df[:100].to_html(f'{dir_path}/error_100_{key}.html')
+
     return 0
