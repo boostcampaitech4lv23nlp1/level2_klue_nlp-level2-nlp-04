@@ -1,7 +1,7 @@
 path:
-  train_path: ../dataset/train/train.csv
-  test_path: ../dataset/train/test.csv
-  predict_path: ../dataset/test/test_data.csv
+  train_path: ./dataset/train/train.csv
+  test_path: ./dataset/train/test.csv
+  predict_path: ./dataset/test/test_data.csv
   save_path: SaveModels/
 
 data:
