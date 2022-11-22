@@ -5,7 +5,7 @@ from torch.optim.lr_scheduler import StepLR, ExponentialLR, LambdaLR
 import transformers
 import torch
 import torch.nn as nn
-import torchmetrics
+import torch.nn.functional as F
 import pytorch_lightning as pl
 import Utils.utils as utils
 import Utils.metric as metric
@@ -23,7 +23,9 @@ class Model(pl.LightningModule):
         self.lr = conf.train.lr
         self.model_config = transformers.AutoConfig.from_pretrained(self.model_name)
         self.model_config.num_labels = 30
-        self.plm = transformers.AutoModelForSequenceClassification.from_pretrained(self.model_name, config=self.model_config)
+        self.plm = transformers.AutoModelForSequenceClassification.from_pretrained(
+            self.model_name, config=self.model_config
+        )
         self.warm_up = conf.train.warm_up
         ## print문 주석 해제해서 임베딩 차원이 어떻게 바뀌는지 한번 확인해보세요
         # print(self.plm)
@@ -32,11 +34,17 @@ class Model(pl.LightningModule):
 
         # token_type_embeddings을 위한 공간 (만약 1차원이라면((token_type_embeddings): Embedding(1, 768)))
 
-        if self.plm.config.type_vocab_size == 1:  # base_model을 통해 일관된 모양으로 받을 수 있습니다 따라서 모두 통일된 형태입니다
+        if (
+            self.plm.config.type_vocab_size == 1
+        ):  # base_model을 통해 일관된 모양으로 받을 수 있습니다 따라서 모두 통일된 형태입니다
             self.plm.config.type_vocab_size = 2
             single_emb = self.plm.base_model.embeddings.token_type_embeddings
-            self.plm.base_model.embeddings.token_type_embeddings = torch.nn.Embedding(2, single_emb.embedding_dim)
-            self.plm.base_model.embeddings.token_type_embeddings.weight = torch.nn.Parameter(single_emb.weight.repeat([2, 1]))
+            self.plm.base_model.embeddings.token_type_embeddings = torch.nn.Embedding(
+                2, single_emb.embedding_dim
+            )
+            self.plm.base_model.embeddings.token_type_embeddings.weight = (
+                torch.nn.Parameter(single_emb.weight.repeat([2, 1]))
+            )
 
         # print(self.plm)
 
@@ -47,7 +55,11 @@ class Model(pl.LightningModule):
             self.freeze()
 
     def forward(self, items):  ## **items
-        x = self.plm(input_ids=items["input_ids"], attention_mask=items["attention_mask"], token_type_ids=items["token_type_ids"],)[
+        x = self.plm(
+            input_ids=items["input_ids"],
+            attention_mask=items["attention_mask"],
+            token_type_ids=items["token_type_ids"],
+        )[
             "logits"
         ]  # cls -> classifier 한 결과를 뱉음
         return x
@@ -67,16 +79,30 @@ class Model(pl.LightningModule):
         logits = self(items)
         loss = self.loss_func(logits, items["labels"].long())
         pred = logits.argmax(-1)  # pred 한 라벨
+        prob = F.softmax(logits, dim=-1)  # 라벨 전체
 
-        return {"val_loss": loss, "pred": pred, "label": items["labels"]}
+        return {"val_loss": loss, "pred": pred, "prob": prob, "label": items["labels"]}
 
     def validation_epoch_end(self, outputs):
-        pred_all = torch.concat([x["pred"] for x in outputs])  # 배치당 예측한 라벨들을 전부 concat 하여 전체 예측 텐서 생성
-        label_all = torch.concat([x["label"] for x in outputs])  # 배치당 정답 라벨을 전부 concat하여 전체 정답 텐서 생성
-        val_f1 = metric.klue_re_micro_f1(pred_all.cpu().numpy(), label_all.cpu().numpy())  # micro_f1 계산
-        avg_loss = torch.stack([x["val_loss"] for x in outputs]).mean()  # 배치당 loss를 전부 stack으로 받아 평균 취함
+        pred_all = torch.concat(
+            [x["pred"] for x in outputs]
+        )  # 배치당 예측한 라벨들을 전부 concat 하여 전체 예측 텐서 생성
+        prob_all = torch.concat([x["prob"] for x in outputs])
+        label_all = torch.concat(
+            [x["label"] for x in outputs]
+        )  # 배치당 정답 라벨을 전부 concat하여 전체 정답 텐서 생성
+        val_f1 = metric.klue_re_micro_f1(
+            pred_all.cpu().numpy(), label_all.cpu().numpy()
+        )  # micro_f1 계산
+        val_auprc = metric.klue_re_auprc(
+            prob_all.cpu().numpy(), label_all.cpu().numpy()
+        )
+        avg_loss = torch.stack(
+            [x["val_loss"] for x in outputs]
+        ).mean()  # 배치당 loss를 전부 stack으로 받아 평균 취함
 
         self.log("val_micro_f1", val_f1)
+        self.log("val_auprc", val_auprc)
         self.log("val_loss", avg_loss)
 
     def test_step(self, batch, batch_idx):
@@ -84,14 +110,26 @@ class Model(pl.LightningModule):
 
         logits = self(items)
         pred = logits.argmax(-1)  # pred 한 라벨
-        return {"pred": pred, "label": items["labels"]}
+        prob = F.softmax(logits, dim=-1)  # 라벨 전체
+        return {"pred": pred, "prob": prob, "label": items["labels"]}
 
     def test_epoch_end(self, outputs):
-        pred_all = torch.concat([x["pred"] for x in outputs])  # 배치당 예측한 라벨들을 전부 concat 하여 전체 예측 텐서 생성
-        label_all = torch.concat([x["label"] for x in outputs])  # 배치당 정답 라벨을 전부 concat하여 전체 정답 텐서 생성
-        test_f1 = metric.klue_re_micro_f1(pred_all.cpu().numpy(), label_all.cpu().numpy())  # micro_f1 계산
+        pred_all = torch.concat(
+            [x["pred"] for x in outputs]
+        )  # 배치당 예측한 라벨들을 전부 concat 하여 전체 예측 텐서 생성
+        prob_all = torch.concat([x["prob"] for x in outputs])
+        label_all = torch.concat(
+            [x["label"] for x in outputs]
+        )  # 배치당 정답 라벨을 전부 concat하여 전체 정답 텐서 생성
+        test_f1 = metric.klue_re_micro_f1(
+            pred_all.cpu().numpy(), label_all.cpu().numpy()
+        )  # micro_f1 계산
+        test_auprc = metric.klue_re_auprc(
+            prob_all.cpu().numpy(), label_all.cpu().numpy()
+        )
 
         self.log("test_micro_f1", test_f1)
+        self.log("test_auprc", test_auprc)
 
     def predict_step(self, batch, batch_idx):
         items = batch
@@ -103,7 +141,10 @@ class Model(pl.LightningModule):
     ## https://pytorch-lightning.readthedocs.io/en/stable/common/optimization.html
     def configure_optimizers(self):
         optimizer = torch.optim.AdamW(self.parameters(), lr=self.lr)  # 추후에 알려드릴 예정
-        scheduler = LambdaLR(optimizer=optimizer, lr_lambda=lambda step: min(1.0, float(step + 1) / (self.warm_up + 1)))
+        scheduler = LambdaLR(
+            optimizer=optimizer,
+            lr_lambda=lambda step: min(1.0, float(step + 1) / (self.warm_up + 1)),
+        )
         return [optimizer], [{"scheduler": scheduler, "interval": "step"}]
 
     def freeze(self):
@@ -120,7 +161,9 @@ class ExampleModel1(pl.LightningModule):
 
         self.model_name = conf.model.model_name
         self.lr = conf.train.lr
-        self.model_config = transformers.AutoConfig.from_pretrained(self.model_name)  # classifier의 input 차원을 얻어오기 위해 모델 정보를 불러옵니다
+        self.model_config = transformers.AutoConfig.from_pretrained(
+            self.model_name
+        )  # classifier의 input 차원을 얻어오기 위해 모델 정보를 불러옵니다
         self.input_dim = self.model_config.hidden_size  # input 차원입니다(cls토큰의 차원)
         self.num_labels = 30  # 최종 output label의 개수입니다(차원)
         # self.input_dim = self.model_config.d_model  # 가끔 다른 모델 구조는 input 차원을 d_model로 사용하기도 합니다(cls토큰의 차원)
@@ -133,11 +176,17 @@ class ExampleModel1(pl.LightningModule):
 
         self.plm.resize_token_embeddings(new_vocab_size)  # vocab 사이즈 조정 (새로운 토큰 추가에 의함)
 
-        if self.plm.config.type_vocab_size == 1:  # classifier 모듈이 없어, 감싸져있지 않습니다 따라서 모두 통일된 형태입니다
+        if (
+            self.plm.config.type_vocab_size == 1
+        ):  # classifier 모듈이 없어, 감싸져있지 않습니다 따라서 모두 통일된 형태입니다
             self.plm.config.type_vocab_size = 2
             single_emb = self.plm.embeddings.token_type_embeddings
-            self.plm.embeddings.token_type_embeddings = torch.nn.Embedding(2, single_emb.embedding_dim)
-            self.plm.embeddings.token_type_embeddings.weight = torch.nn.Parameter(single_emb.weight.repeat([2, 1]))
+            self.plm.embeddings.token_type_embeddings = torch.nn.Embedding(
+                2, single_emb.embedding_dim
+            )
+            self.plm.embeddings.token_type_embeddings.weight = torch.nn.Parameter(
+                single_emb.weight.repeat([2, 1])
+            )
 
         # print(self.plm)
 
@@ -154,7 +203,11 @@ class ExampleModel1(pl.LightningModule):
         )
 
     def forward(self, items):  ## **items
-        x = self.plm(input_ids=items["input_ids"], attention_mask=items["attention_mask"], token_type_ids=items["token_type_ids"],)[
+        x = self.plm(
+            input_ids=items["input_ids"],
+            attention_mask=items["attention_mask"],
+            token_type_ids=items["token_type_ids"],
+        )[
             0
         ]  # pooler까지 거친 최종적인 output입니다
         x = x[:, 0, :]
@@ -176,16 +229,30 @@ class ExampleModel1(pl.LightningModule):
         logits = self(items)
         loss = self.loss_func(logits, items["labels"].long())
         pred = logits.argmax(-1)  # pred 한 라벨
+        prob = F.softmax(logits, dim=-1)  # 라벨 전체
 
-        return {"val_loss": loss, "pred": pred, "label": items["labels"]}
+        return {"val_loss": loss, "pred": pred, "prob": prob, "label": items["labels"]}
 
     def validation_epoch_end(self, outputs):
-        pred_all = torch.concat([x["pred"] for x in outputs])  # 배치당 예측한 라벨들을 전부 concat 하여 전체 예측 텐서 생성
-        label_all = torch.concat([x["label"] for x in outputs])  # 배치당 정답 라벨을 전부 concat하여 전체 정답 텐서 생성
-        val_f1 = metric.klue_re_micro_f1(pred_all.cpu().numpy(), label_all.cpu().numpy())  # micro_f1 계산
-        avg_loss = torch.stack([x["val_loss"] for x in outputs]).mean()  # 배치당 loss를 전부 stack으로 받아 평균 취함
+        pred_all = torch.concat(
+            [x["pred"] for x in outputs]
+        )  # 배치당 예측한 라벨들을 전부 concat 하여 전체 예측 텐서 생성
+        prob_all = torch.concat([x["prob"] for x in outputs])
+        label_all = torch.concat(
+            [x["label"] for x in outputs]
+        )  # 배치당 정답 라벨을 전부 concat하여 전체 정답 텐서 생성
+        val_f1 = metric.klue_re_micro_f1(
+            pred_all.cpu().numpy(), label_all.cpu().numpy()
+        )  # micro_f1 계산
+        val_auprc = metric.klue_re_auprc(
+            prob_all.cpu().numpy(), label_all.cpu().numpy()
+        )
+        avg_loss = torch.stack(
+            [x["val_loss"] for x in outputs]
+        ).mean()  # 배치당 loss를 전부 stack으로 받아 평균 취함
 
         self.log("val_micro_f1", val_f1)
+        self.log("val_auprc", val_auprc)
         self.log("val_loss", avg_loss)
 
     def test_step(self, batch, batch_idx):
@@ -193,14 +260,26 @@ class ExampleModel1(pl.LightningModule):
 
         logits = self(items)
         pred = logits.argmax(-1)  # pred 한 라벨
-        return {"pred": pred, "label": items["labels"]}
+        prob = F.softmax(logits, dim=-1)  # 라벨 전체
+        return {"pred": pred, "prob": prob, "label": items["labels"]}
 
     def test_epoch_end(self, outputs):
-        pred_all = torch.concat([x["pred"] for x in outputs])  # 배치당 예측한 라벨들을 전부 concat 하여 전체 예측 텐서 생성
-        label_all = torch.concat([x["label"] for x in outputs])  # 배치당 정답 라벨을 전부 concat하여 전체 정답 텐서 생성
-        test_f1 = metric.klue_re_micro_f1(pred_all.cpu().numpy(), label_all.cpu().numpy())  # micro_f1 계산
+        pred_all = torch.concat(
+            [x["pred"] for x in outputs]
+        )  # 배치당 예측한 라벨들을 전부 concat 하여 전체 예측 텐서 생성
+        prob_all = torch.concat([x["prob"] for x in outputs])
+        label_all = torch.concat(
+            [x["label"] for x in outputs]
+        )  # 배치당 정답 라벨을 전부 concat하여 전체 정답 텐서 생성
+        test_f1 = metric.klue_re_micro_f1(
+            pred_all.cpu().numpy(), label_all.cpu().numpy()
+        )  # micro_f1 계산
+        test_auprc = metric.klue_re_auprc(
+            prob_all.cpu().numpy(), label_all.cpu().numpy()
+        )
 
         self.log("test_micro_f1", test_f1)
+        self.log("test_auprc", test_auprc)
 
     def predict_step(self, batch, batch_idx):
         items = batch
@@ -212,7 +291,10 @@ class ExampleModel1(pl.LightningModule):
     ## https://pytorch-lightning.readthedocs.io/en/stable/common/optimization.html
     def configure_optimizers(self):
         optimizer = torch.optim.AdamW(self.parameters(), lr=self.lr)  # 추후에 알려드릴 예정
-        scheduler = LambdaLR(optimizer=optimizer, lr_lambda=lambda step: min(1.0, float(step + 1) / (self.warm_up + 1)))
+        scheduler = LambdaLR(
+            optimizer=optimizer,
+            lr_lambda=lambda step: min(1.0, float(step + 1) / (self.warm_up + 1)),
+        )
         return [optimizer], [{"scheduler": scheduler, "interval": "step"}]
 
     def freeze(self):
@@ -231,11 +313,19 @@ class ExampleModel2(ExampleModel1):
 
         self.hidden_dim = 1024
 
-        self.classifier = nn.Sequential(nn.Linear(self.input_dim, self.hidden_dim), nn.ReLU(), nn.Dropout(0.2))
-        self.classifier2 = nn.Sequential(nn.Linear(self.input_dim + self.hidden_dim, self.num_labels))
+        self.classifier = nn.Sequential(
+            nn.Linear(self.input_dim, self.hidden_dim), nn.ReLU(), nn.Dropout(0.2)
+        )
+        self.classifier2 = nn.Sequential(
+            nn.Linear(self.input_dim + self.hidden_dim, self.num_labels)
+        )
 
     def forward(self, items):  ## **items
-        x = self.plm(input_ids=items["input_ids"], attention_mask=items["attention_mask"], token_type_ids=items["token_type_ids"],)[
+        x = self.plm(
+            input_ids=items["input_ids"],
+            attention_mask=items["attention_mask"],
+            token_type_ids=items["token_type_ids"],
+        )[
             0
         ]  # 최종적인 output입니다
         x = x[:, 0, :]  # 배치의, 0번째 인덱스(CLS)의 모든 요소(768)을 가져옵니다
