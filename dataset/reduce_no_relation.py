@@ -10,7 +10,7 @@ def reduce_no_relation(delete_num, train_df):
     delete_df = train_df[train_df['label'] == "no_relation"].sample(n=delete_num, random_state=SEED)
     delete_list = list(delete_df['id'])
     result = train_df[train_df['id'].apply(lambda x: x not in delete_list) == True].reset_index(drop=True)
-    result.to_csv('train_reduce_no_relation2.csv', index=False)
+    result.to_csv('train_reduce_no_relation.csv', index=False)
 
     print(f'삭제 후 train_set 길이: {len(result)}')
 
