@@ -70,4 +70,4 @@ def sweep(args, conf, exp_count):
         project=project_name,
     )
 
-    wandb.agent(sweep_id=sweep_id, function=sweep_train),  # count=exp_count)
+    wandb.agent(sweep_id=sweep_id, function=sweep_train)  # ,   count=exp_count)
