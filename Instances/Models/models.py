@@ -315,6 +315,7 @@ class RBERT(pl.LightningModule):
         if self.use_freeze:
             self.freeze()
 
+    @staticmethod
     def entity_average(hidden_output, e_mask):
         e_mask_unsqueeze = e_mask.unsqueeze(1)
         length_tensor = (e_mask != 0).sum(dim=1).unsqueeze(1)
