@@ -131,7 +131,7 @@ class Model(pl.LightningModule):
                 param.requires_grad = False
 
 
-class ExampleModel1(pl.LightningModule):
+class BaseModel(pl.LightningModule):
     def __init__(self, conf, new_vocab_size):
         super().__init__()
         self.save_hyperparameters()
@@ -265,7 +265,7 @@ class ExampleModel1(pl.LightningModule):
 # 상속을 받으면 기존에 구현되어 있는 코드를 재활용할 수 있습니다
 # 상속받은 자식클래스에 classifier가 없다면 부모클래스에 있던 classifier가 print 할때는 나오지만 forward 과정에서는 사용되지 않습니다
 # 이렇게 안하시고 복붙하셔도 상관없습니다
-class ExampleModel2(ExampleModel1):
+class ModelWithConcat(BaseModel):
     def __init__(self, conf, new_vocab_size):
         super().__init__(conf, new_vocab_size)
 
