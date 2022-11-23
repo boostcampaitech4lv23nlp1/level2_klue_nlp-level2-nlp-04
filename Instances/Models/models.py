@@ -5,13 +5,11 @@ from torch.optim.lr_scheduler import StepLR, ExponentialLR, LambdaLR
 import transformers
 import torch
 import torch.nn as nn
-import torchmetrics
+import torch.nn.functional as F
 import pytorch_lightning as pl
 import Utils.utils as utils
 import Utils.metric as metric
 from . import lr_scheduler_Func
-
-# TODO: auprc log 할 수 있도록 하여야 함
 
 
 class Model(pl.LightningModule):
@@ -67,16 +65,20 @@ class Model(pl.LightningModule):
         logits = self(items)
         loss = self.loss_func(logits, items["labels"].long())
         pred = logits.argmax(-1)  # pred 한 라벨
+        prob = F.softmax(logits, dim=-1)  # 라벨 전체
 
-        return {"val_loss": loss, "pred": pred, "label": items["labels"]}
+        return {"val_loss": loss, "pred": pred, "prob": prob, "label": items["labels"]}
 
     def validation_epoch_end(self, outputs):
         pred_all = torch.concat([x["pred"] for x in outputs])  # 배치당 예측한 라벨들을 전부 concat 하여 전체 예측 텐서 생성
+        prob_all = torch.concat([x["prob"] for x in outputs])
         label_all = torch.concat([x["label"] for x in outputs])  # 배치당 정답 라벨을 전부 concat하여 전체 정답 텐서 생성
         val_f1 = metric.klue_re_micro_f1(pred_all.cpu().numpy(), label_all.cpu().numpy())  # micro_f1 계산
+        val_auprc = metric.klue_re_auprc(prob_all.cpu().numpy(), label_all.cpu().numpy())
         avg_loss = torch.stack([x["val_loss"] for x in outputs]).mean()  # 배치당 loss를 전부 stack으로 받아 평균 취함
 
         self.log("val_micro_f1", val_f1)
+        self.log("val_auprc", val_auprc)
         self.log("val_loss", avg_loss)
 
     def test_step(self, batch, batch_idx):
@@ -84,14 +86,18 @@ class Model(pl.LightningModule):
 
         logits = self(items)
         pred = logits.argmax(-1)  # pred 한 라벨
-        return {"pred": pred, "label": items["labels"]}
+        prob = F.softmax(logits, dim=-1)  # 라벨 전체
+        return {"pred": pred, "prob": prob, "label": items["labels"]}
 
     def test_epoch_end(self, outputs):
         pred_all = torch.concat([x["pred"] for x in outputs])  # 배치당 예측한 라벨들을 전부 concat 하여 전체 예측 텐서 생성
+        prob_all = torch.concat([x["prob"] for x in outputs])
         label_all = torch.concat([x["label"] for x in outputs])  # 배치당 정답 라벨을 전부 concat하여 전체 정답 텐서 생성
         test_f1 = metric.klue_re_micro_f1(pred_all.cpu().numpy(), label_all.cpu().numpy())  # micro_f1 계산
+        test_auprc = metric.klue_re_auprc(prob_all.cpu().numpy(), label_all.cpu().numpy())
 
         self.log("test_micro_f1", test_f1)
+        self.log("test_auprc", test_auprc)
 
     def predict_step(self, batch, batch_idx):
         items = batch
@@ -103,7 +109,10 @@ class Model(pl.LightningModule):
     ## https://pytorch-lightning.readthedocs.io/en/stable/common/optimization.html
     def configure_optimizers(self):
         optimizer = torch.optim.AdamW(self.parameters(), lr=self.lr)  # 추후에 알려드릴 예정
-        scheduler = LambdaLR(optimizer=optimizer, lr_lambda=lambda step: min(1.0, float(step + 1) / (self.warm_up + 1)))
+        scheduler = LambdaLR(
+            optimizer=optimizer,
+            lr_lambda=lambda step: min(1.0, float(step + 1) / (self.warm_up + 1)),
+        )
         return [optimizer], [{"scheduler": scheduler, "interval": "step"}]
 
     def freeze(self):
@@ -176,16 +185,20 @@ class ExampleModel1(pl.LightningModule):
         logits = self(items)
         loss = self.loss_func(logits, items["labels"].long())
         pred = logits.argmax(-1)  # pred 한 라벨
+        prob = F.softmax(logits, dim=-1)  # 라벨 전체
 
-        return {"val_loss": loss, "pred": pred, "label": items["labels"]}
+        return {"val_loss": loss, "pred": pred, "prob": prob, "label": items["labels"]}
 
     def validation_epoch_end(self, outputs):
         pred_all = torch.concat([x["pred"] for x in outputs])  # 배치당 예측한 라벨들을 전부 concat 하여 전체 예측 텐서 생성
+        prob_all = torch.concat([x["prob"] for x in outputs])
         label_all = torch.concat([x["label"] for x in outputs])  # 배치당 정답 라벨을 전부 concat하여 전체 정답 텐서 생성
         val_f1 = metric.klue_re_micro_f1(pred_all.cpu().numpy(), label_all.cpu().numpy())  # micro_f1 계산
+        val_auprc = metric.klue_re_auprc(prob_all.cpu().numpy(), label_all.cpu().numpy())
         avg_loss = torch.stack([x["val_loss"] for x in outputs]).mean()  # 배치당 loss를 전부 stack으로 받아 평균 취함
 
         self.log("val_micro_f1", val_f1)
+        self.log("val_auprc", val_auprc)
         self.log("val_loss", avg_loss)
 
     def test_step(self, batch, batch_idx):
@@ -193,14 +206,18 @@ class ExampleModel1(pl.LightningModule):
 
         logits = self(items)
         pred = logits.argmax(-1)  # pred 한 라벨
-        return {"pred": pred, "label": items["labels"]}
+        prob = F.softmax(logits, dim=-1)  # 라벨 전체
+        return {"pred": pred, "prob": prob, "label": items["labels"]}
 
     def test_epoch_end(self, outputs):
         pred_all = torch.concat([x["pred"] for x in outputs])  # 배치당 예측한 라벨들을 전부 concat 하여 전체 예측 텐서 생성
+        prob_all = torch.concat([x["prob"] for x in outputs])
         label_all = torch.concat([x["label"] for x in outputs])  # 배치당 정답 라벨을 전부 concat하여 전체 정답 텐서 생성
         test_f1 = metric.klue_re_micro_f1(pred_all.cpu().numpy(), label_all.cpu().numpy())  # micro_f1 계산
+        test_auprc = metric.klue_re_auprc(prob_all.cpu().numpy(), label_all.cpu().numpy())
 
         self.log("test_micro_f1", test_f1)
+        self.log("test_auprc", test_auprc)
 
     def predict_step(self, batch, batch_idx):
         items = batch
@@ -212,7 +229,10 @@ class ExampleModel1(pl.LightningModule):
     ## https://pytorch-lightning.readthedocs.io/en/stable/common/optimization.html
     def configure_optimizers(self):
         optimizer = torch.optim.AdamW(self.parameters(), lr=self.lr)  # 추후에 알려드릴 예정
-        scheduler = LambdaLR(optimizer=optimizer, lr_lambda=lambda step: min(1.0, float(step + 1) / (self.warm_up + 1)))
+        scheduler = LambdaLR(
+            optimizer=optimizer,
+            lr_lambda=lambda step: min(1.0, float(step + 1) / (self.warm_up + 1)),
+        )
         return [optimizer], [{"scheduler": scheduler, "interval": "step"}]
 
     def freeze(self):
