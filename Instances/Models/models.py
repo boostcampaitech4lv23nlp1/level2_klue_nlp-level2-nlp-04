@@ -37,6 +37,8 @@ class Model(pl.LightningModule):
             self.plm.base_model.embeddings.token_type_embeddings.weight = torch.nn.Parameter(single_emb.weight.repeat([2, 1]))
 
         # print(self.plm)
+        self.loss_name = conf.train.loss
+        self.focal_gamma = conf.train.focal_gamma
 
         self.loss_func = utils.loss_dict[conf.train.loss]
         self.use_freeze = conf.train.use_freeze
@@ -54,7 +56,10 @@ class Model(pl.LightningModule):
         items = batch
 
         logits = self(items)
-        loss = self.loss_func(logits, items["labels"].long())
+        if self.loss_name == "focal":
+            loss = self.loss_func(logits, items["labels"].long(), self.focal_gamma)
+        else:
+            loss = self.loss_func(logits, items["labels"].long())
         self.log("train_loss", loss)
 
         return loss
@@ -63,7 +68,11 @@ class Model(pl.LightningModule):
         items = batch
 
         logits = self(items)
-        loss = self.loss_func(logits, items["labels"].long())
+        if self.loss_name == "focal":
+            loss = self.loss_func(logits, items["labels"].long(), self.focal_gamma)
+        else:
+            loss = self.loss_func(logits, items["labels"].long())
+
         pred = logits.argmax(-1)  # pred 한 라벨
         prob = F.softmax(logits, dim=-1)  # 라벨 전체
 
@@ -150,6 +159,9 @@ class ExampleModel1(pl.LightningModule):
 
         # print(self.plm)
 
+        self.loss_name = conf.train.loss
+        self.focal_gamma = conf.train.focal_gamma
+
         self.loss_func = utils.loss_dict[conf.train.loss]
         self.use_freeze = conf.train.use_freeze
 
@@ -174,7 +186,11 @@ class ExampleModel1(pl.LightningModule):
         items = batch
 
         logits = self(items)
-        loss = self.loss_func(logits, items["labels"].long())
+        if self.loss_name == "focal":
+            loss = self.loss_func(logits, items["labels"].long(), self.focal_gamma)
+        else:
+            loss = self.loss_func(logits, items["labels"].long())
+
         self.log("train_loss", loss)
 
         return loss
@@ -183,7 +199,11 @@ class ExampleModel1(pl.LightningModule):
         items = batch
 
         logits = self(items)
-        loss = self.loss_func(logits, items["labels"].long())
+        if self.loss_name == "focal":
+            loss = self.loss_func(logits, items["labels"].long(), self.focal_gamma)
+        else:
+            loss = self.loss_func(logits, items["labels"].long())
+
         pred = logits.argmax(-1)  # pred 한 라벨
         prob = F.softmax(logits, dim=-1)  # 라벨 전체
 
