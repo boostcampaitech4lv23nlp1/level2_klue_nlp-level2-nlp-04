@@ -60,6 +60,45 @@ class Dataloader(pl.LightningDataModule):
 
         return special_tokens
 
+    def get_entity_position_embedding(self, entity_marker_type, special_tokens, input_ids):
+        token2id = {token: idx for token, idx in zip(self.tokenizer.all_special_tokens, self.tokenizer.all_special_ids)}
+        subj_id, obj_id = [], []
+
+        if entity_marker_type == "typed_entity_marker":
+            for i in special_tokens:
+                if i[1] == "S" or i[1:3] == "/S":
+                    subj_id.append(token2id[i])
+                elif i[1] == "O" or i[1:3] == "/O":
+                    obj_id.append(token2id[i])
+
+        elif entity_marker_type == "typed_entity_marker_punct":
+            subj_id, obj_id = [token2id["@"]], [token2id["#"]]
+
+        subj_emb, obj_emb = [], []
+        for ids in input_ids:
+            subj_pos, obj_pos = [], []
+            for i in range(len(ids)):
+                if len(subj_pos) + len(obj_pos) == 4:
+                    break
+                if ids[i] in subj_id:
+                    subj_pos.append(i)  # subj 위치 정보(시작, 끝)
+                if ids[i] in obj_id:
+                    obj_pos.append(i)  # obj 위치 정보(시작, 끝)
+            subj_emb.append(subj_pos)
+            obj_emb.append(obj_pos)
+
+        subj_embeddings, obj_embeddings = [], []
+        for s_emb in subj_emb:
+            temp_s_embeddings = [0] * len(input_ids[0])
+            temp_s_embeddings[s_emb[0] + 1 : s_emb[1]] = [1] * (s_emb[1] - (s_emb[0] + 1))
+            subj_embeddings.append(temp_s_embeddings)
+        for o_emb in obj_emb:
+            temp_o_embeddings = [0] * len(input_ids[0])
+            temp_o_embeddings[o_emb[0] + 1 : o_emb[1]] = [1] * (o_emb[1] - (o_emb[0] + 1))
+            obj_embeddings.append(temp_o_embeddings)
+
+        return torch.tensor(subj_embeddings), torch.tensor(obj_embeddings)
+
     def tokenizing(self, dataframe, entity_marker_type):
         """
         entity_marker_type:
@@ -106,6 +145,9 @@ class Dataloader(pl.LightningDataModule):
             truncation=True,
             add_special_tokens=True,
         )
+
+        if entity_marker_type != "baseline":
+            tokenized_sentences["e1_mask"], tokenized_sentences["e2_mask"] = self.get_entity_position_embedding(entity_marker_type, self.tokenizer.additional_special_tokens, tokenized_sentences["input_ids"])
         return tokenized_sentences
 
     # predict 빼고 전부 동일한 전처리
