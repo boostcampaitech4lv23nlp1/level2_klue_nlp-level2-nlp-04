@@ -362,28 +362,35 @@ class RBERT(pl.LightningModule):
         logits = self(items)
         loss = self.loss_func(logits.view(-1, self.model_config.num_labels), items["labels"].view(-1))
         pred = logits.argmax(-1)
-
-        return {"val_loss": loss, "pred": pred, "label": items["labels"]}
+        prob = F.softmax(logits, dim=-1)
+        return {"val_loss": loss, "pred": pred, "prob": prob, "label": items["labels"]}
 
     def validation_epoch_end(self, outputs):
         pred_all = torch.concat([x["pred"] for x in outputs])
+        prob_all = torch.concat([x["prob"] for x in outputs])
         label_all = torch.concat([x["label"] for x in outputs])
         val_f1 = metric.klue_re_micro_f1(pred_all.cpu().numpy(), label_all.cpu().numpy())  # micro_f1 계산
+        val_auprc = metric.klue_re_auprc(prob_all.cpu().numpy(), label_all.cpu().numpy())
         avg_loss = torch.stack([x["val_loss"] for x in outputs]).mean()
         self.log("val_micro_f1", val_f1)
+        self.log("val_auprc", val_auprc)
         self.log("val_loss", avg_loss)
 
     def test_step(self, batch, batch_idx):
         items = batch
         logits = self(items)
         pred = logits.argmax(-1)  # pred 한 라벨
-        return {"pred": pred, "label": items["labels"]}
+        prob = F.softmax(logits, dim=-1)
+        return {"pred": pred, "prob": prob, "label": items["labels"]}
 
     def test_epoch_end(self, outputs):
         pred_all = torch.concat([x["pred"] for x in outputs])
+        prob_all = torch.concat([x["prob"] for x in outputs])
         label_all = torch.concat([x["label"] for x in outputs])
         test_f1 = metric.klue_re_micro_f1(pred_all.cpu().numpy(), label_all.cpu().numpy())
+        test_auprc = metric.klue_re_auprc(prob_all.cpu().numpy(), label_all.cpu().numpy())
         self.log("test_micro_f1", test_f1)
+        self.log("test_auprc", test_auprc)
 
     def predict_step(self, batch, batch_idx):
         items = batch
