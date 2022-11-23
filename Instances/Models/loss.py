@@ -1,5 +1,6 @@
 import torch
 import torch.nn as nn
+from . import focal_loss
 
 
 def L1_loss(output, target):
@@ -26,6 +27,12 @@ def HUBER_loss(output, target):
     loss_func = nn.HuberLoss()
     return loss_func(output, target)
 
+
 def CrossEntropyLoss(output, target):
     loss_func = nn.CrossEntropyLoss()
-    return loss_func(output,target)
+    return loss_func(output, target)
+
+
+def Focal_loss(output, target, gamma):
+    loss_func = focal_loss.FocalLoss(gamma=gamma)
+    return loss_func(output, target)
