@@ -329,6 +329,9 @@ class RBERT(pl.LightningModule):
             use_activation=False,
         )
 
+        self.loss_name = conf.train.loss
+        self.focal_gamma = conf.train.focal_gamma
+
         self.loss_func = utils.loss_dict[conf.train.loss]
         self.use_freeze = conf.train.use_freeze
 
@@ -373,14 +376,20 @@ class RBERT(pl.LightningModule):
     def training_step(self, batch, batch_idx):
         items = batch
         logits = self(items)
-        loss = self.loss_func(logits.view(-1, self.model_config.num_labels), items["labels"].view(-1))
+        if self.loss_name == "focal":
+            loss = self.loss_func(logits, items["labels"].long(), self.focal_gamma)
+        else:
+            loss = self.loss_func(logits, items["labels"].long())
         self.log("train_loss", loss)
         return loss
 
     def validation_step(self, batch, batch_idx):
         items = batch
         logits = self(items)
-        loss = self.loss_func(logits.view(-1, self.model_config.num_labels), items["labels"].view(-1))
+        if self.loss_name == "focal":
+            loss = self.loss_func(logits, items["labels"].long(), self.focal_gamma)
+        else:
+            loss = self.loss_func(logits, items["labels"].long())
         pred = logits.argmax(-1)
         prob = F.softmax(logits, dim=-1)
         return {"val_loss": loss, "pred": pred, "prob": prob, "label": items["labels"]}
