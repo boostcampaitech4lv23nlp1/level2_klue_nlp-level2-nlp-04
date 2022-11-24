@@ -67,7 +67,7 @@ class Dataloader(pl.LightningDataModule):
         entity_marker_type:
             - baseline : entity_marker_type 미사용
             - typed_entity_marker: [SUBJ-NER] subject [/SUBJ-NER], [OBJ-NER] obj [/OBJ-NER]
-            - typed_entity_marker_punct: @ * subject ner type * subject @, # ^ object ner type ^ object #
+            - typed_entity_marker_punct: @ + subject ner type + subject @, # ^ object ner type ^ object #
         """
         sents = []
         concat_entity = []
@@ -85,7 +85,7 @@ class Dataloader(pl.LightningDataModule):
                 temp_obj = f"{temp_obj_type_start} {str(obj)} {temp_obj_type_end}"
 
             elif entity_marker_type == "typed_entity_marker_punct":
-                temp_subj = f"@ * {str(subj_type)} * {str(subj)} @"
+                temp_subj = f"@ + {str(subj_type)} + {str(subj)} @"
                 temp_obj = f"# ^ {str(obj_type)} ^ {str(obj)} #"
 
             elif entity_marker_type == "baseline":
