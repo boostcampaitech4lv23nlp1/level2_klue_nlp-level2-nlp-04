@@ -28,14 +28,6 @@ class Model(pl.LightningModule):
 
         self.plm.resize_token_embeddings(new_vocab_size)  # vocab 사이즈 조정 (새로운 토큰 추가에 의함)
 
-        # token_type_embeddings을 위한 공간 (만약 1차원이라면((token_type_embeddings): Embedding(1, 768)))
-
-        if self.plm.config.type_vocab_size == 1:  # base_model을 통해 일관된 모양으로 받을 수 있습니다 따라서 모두 통일된 형태입니다
-            self.plm.config.type_vocab_size = 2
-            single_emb = self.plm.base_model.embeddings.token_type_embeddings
-            self.plm.base_model.embeddings.token_type_embeddings = torch.nn.Embedding(2, single_emb.embedding_dim)
-            self.plm.base_model.embeddings.token_type_embeddings.weight = torch.nn.Parameter(single_emb.weight.repeat([2, 1]))
-
         # print(self.plm)
         self.loss_name = conf.train.loss
         self.focal_gamma = conf.train.focal_gamma
@@ -150,14 +142,6 @@ class BaseModel(pl.LightningModule):
         # print(self.plm)
 
         self.plm.resize_token_embeddings(new_vocab_size)  # vocab 사이즈 조정 (새로운 토큰 추가에 의함)
-
-        if self.plm.config.type_vocab_size == 1:  # classifier 모듈이 없어, 감싸져있지 않습니다 따라서 모두 통일된 형태입니다
-            self.plm.config.type_vocab_size = 2
-            single_emb = self.plm.embeddings.token_type_embeddings
-            self.plm.embeddings.token_type_embeddings = torch.nn.Embedding(2, single_emb.embedding_dim)
-            self.plm.embeddings.token_type_embeddings.weight = torch.nn.Parameter(single_emb.weight.repeat([2, 1]))
-
-        # print(self.plm)
 
         self.loss_name = conf.train.loss
         self.focal_gamma = conf.train.focal_gamma
