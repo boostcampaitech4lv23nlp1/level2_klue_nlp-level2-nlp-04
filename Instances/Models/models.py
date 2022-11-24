@@ -37,6 +37,8 @@ class Model(pl.LightningModule):
             self.plm.base_model.embeddings.token_type_embeddings.weight = torch.nn.Parameter(single_emb.weight.repeat([2, 1]))
 
         # print(self.plm)
+        self.loss_name = conf.train.loss
+        self.focal_gamma = conf.train.focal_gamma
 
         self.loss_func = utils.loss_dict[conf.train.loss]
         self.use_freeze = conf.train.use_freeze
@@ -54,7 +56,10 @@ class Model(pl.LightningModule):
         items = batch
 
         logits = self(items)
-        loss = self.loss_func(logits, items["labels"].long())
+        if self.loss_name == "focal":
+            loss = self.loss_func(logits, items["labels"].long(), self.focal_gamma)
+        else:
+            loss = self.loss_func(logits, items["labels"].long())
         self.log("train_loss", loss)
 
         return loss
@@ -63,7 +68,11 @@ class Model(pl.LightningModule):
         items = batch
 
         logits = self(items)
-        loss = self.loss_func(logits, items["labels"].long())
+        if self.loss_name == "focal":
+            loss = self.loss_func(logits, items["labels"].long(), self.focal_gamma)
+        else:
+            loss = self.loss_func(logits, items["labels"].long())
+
         pred = logits.argmax(-1)  # pred 한 라벨
         prob = F.softmax(logits, dim=-1)  # 라벨 전체
 
@@ -122,7 +131,7 @@ class Model(pl.LightningModule):
                 param.requires_grad = False
 
 
-class ExampleModel1(pl.LightningModule):
+class BaseModel(pl.LightningModule):
     def __init__(self, conf, new_vocab_size):
         super().__init__()
         self.save_hyperparameters()
@@ -150,6 +159,9 @@ class ExampleModel1(pl.LightningModule):
 
         # print(self.plm)
 
+        self.loss_name = conf.train.loss
+        self.focal_gamma = conf.train.focal_gamma
+
         self.loss_func = utils.loss_dict[conf.train.loss]
         self.use_freeze = conf.train.use_freeze
 
@@ -174,7 +186,11 @@ class ExampleModel1(pl.LightningModule):
         items = batch
 
         logits = self(items)
-        loss = self.loss_func(logits, items["labels"].long())
+        if self.loss_name == "focal":
+            loss = self.loss_func(logits, items["labels"].long(), self.focal_gamma)
+        else:
+            loss = self.loss_func(logits, items["labels"].long())
+
         self.log("train_loss", loss)
 
         return loss
@@ -183,7 +199,11 @@ class ExampleModel1(pl.LightningModule):
         items = batch
 
         logits = self(items)
-        loss = self.loss_func(logits, items["labels"].long())
+        if self.loss_name == "focal":
+            loss = self.loss_func(logits, items["labels"].long(), self.focal_gamma)
+        else:
+            loss = self.loss_func(logits, items["labels"].long())
+
         pred = logits.argmax(-1)  # pred 한 라벨
         prob = F.softmax(logits, dim=-1)  # 라벨 전체
 
@@ -245,7 +265,7 @@ class ExampleModel1(pl.LightningModule):
 # 상속을 받으면 기존에 구현되어 있는 코드를 재활용할 수 있습니다
 # 상속받은 자식클래스에 classifier가 없다면 부모클래스에 있던 classifier가 print 할때는 나오지만 forward 과정에서는 사용되지 않습니다
 # 이렇게 안하시고 복붙하셔도 상관없습니다
-class ExampleModel2(ExampleModel1):
+class ModelWithConcat(BaseModel):
     def __init__(self, conf, new_vocab_size):
         super().__init__(conf, new_vocab_size)
 
