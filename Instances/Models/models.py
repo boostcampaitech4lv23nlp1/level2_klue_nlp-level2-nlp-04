@@ -283,3 +283,147 @@ class ModelWithConcat(BaseModel):
         x = torch.cat((x, y), dim=1)
         x = self.classifier2(x)
         return x
+
+
+class FCLayer(nn.Module):
+    def __init__(self, input_dim, output_dim, dropout_rate=0.0, use_activation=True):
+        super(FCLayer, self).__init__()
+        self.use_activation = use_activation
+        self.dropout = nn.Dropout(dropout_rate)
+        self.linear = nn.Linear(input_dim, output_dim)
+        self.tanh = nn.Tanh()
+
+    def forward(self, x):
+        x = self.dropout(x)
+        if self.use_activation:
+            x = self.tanh(x)
+        return self.linear(x)
+
+
+class RBERT(pl.LightningModule):
+    def __init__(self, conf, new_vocab_size):
+        super().__init__()
+        self.save_hyperparameters()
+        self.model_name = conf.model.model_name
+        self.lr = conf.train.lr
+        self.model_config = transformers.AutoConfig.from_pretrained(self.model_name)
+        self.model_config.num_labels = 30
+        self.plm = transformers.AutoModel.from_pretrained(self.model_name, config=self.model_config)
+        self.warm_up = conf.train.warm_up
+        self.dropout_rate = 0.1
+
+        self.plm.resize_token_embeddings(new_vocab_size)
+
+        if self.plm.config.type_vocab_size == 1:
+            self.plm.config.type_vocab_size = 2
+            single_emb = self.plm.base_model.embeddings.token_type_embeddings
+            self.plm.base_model.embeddings.token_type_embeddings = torch.nn.Embedding(2, single_emb.embedding_dim)
+            self.plm.base_model.embeddings.token_type_embeddings.weight = torch.nn.Parameter(single_emb.weight.repeat([2, 1]))
+
+        self.cls_fc_layer = FCLayer(self.model_config.hidden_size, self.model_config.hidden_size, self.dropout_rate)
+        self.entity_fc_layer = FCLayer(self.model_config.hidden_size, self.model_config.hidden_size, self.dropout_rate)
+        self.label_classifier = FCLayer(
+            self.model_config.hidden_size * 3,
+            self.model_config.num_labels,
+            self.dropout_rate,
+            use_activation=False,
+        )
+
+        self.loss_func = utils.loss_dict[conf.train.loss]
+        self.use_freeze = conf.train.use_freeze
+
+        if self.use_freeze:
+            self.freeze()
+
+    @staticmethod
+    def entity_average(hidden_output, e_mask):
+        e_mask_unsqueeze = e_mask.unsqueeze(1)
+        length_tensor = (e_mask != 0).sum(dim=1).unsqueeze(1)
+
+        sum_vector = torch.bmm(
+            e_mask_unsqueeze.float(),
+            hidden_output.float(),
+        ).squeeze(1)
+        avg_vetor = sum_vector.float() / length_tensor.float()
+        return avg_vetor
+
+    def forward(self, items):
+        outputs = self.plm(
+            input_ids=items["input_ids"],
+            attention_mask=items["attention_mask"],
+            token_type_ids=items["token_type_ids"],
+        )
+        sequence_output = outputs.last_hidden_state
+        pooler_output = outputs.pooler_output
+
+        # Average
+        e1_h = self.entity_average(sequence_output, items["e1_mask"])
+        e2_h = self.entity_average(sequence_output, items["e2_mask"])
+
+        # Dropout -> tanh -> fc_layer (Share FC layer for e1 and e2)
+        pooler_output = self.cls_fc_layer(pooler_output)
+        e1_h = self.entity_fc_layer(e1_h)
+        e2_h = self.entity_fc_layer(e2_h)
+
+        # Concat -> fc_layer
+        concat_h = torch.cat([pooler_output, e1_h, e2_h], dim=-1)
+        logits = self.label_classifier(concat_h)
+        return logits
+
+    def training_step(self, batch, batch_idx):
+        items = batch
+        logits = self(items)
+        loss = self.loss_func(logits.view(-1, self.model_config.num_labels), items["labels"].view(-1))
+        self.log("train_loss", loss)
+        return loss
+
+    def validation_step(self, batch, batch_idx):
+        items = batch
+        logits = self(items)
+        loss = self.loss_func(logits.view(-1, self.model_config.num_labels), items["labels"].view(-1))
+        pred = logits.argmax(-1)
+        prob = F.softmax(logits, dim=-1)
+        return {"val_loss": loss, "pred": pred, "prob": prob, "label": items["labels"]}
+
+    def validation_epoch_end(self, outputs):
+        pred_all = torch.concat([x["pred"] for x in outputs])
+        prob_all = torch.concat([x["prob"] for x in outputs])
+        label_all = torch.concat([x["label"] for x in outputs])
+        val_f1 = metric.klue_re_micro_f1(pred_all.cpu().numpy(), label_all.cpu().numpy())  # micro_f1 계산
+        val_auprc = metric.klue_re_auprc(prob_all.cpu().numpy(), label_all.cpu().numpy())
+        avg_loss = torch.stack([x["val_loss"] for x in outputs]).mean()
+        self.log("val_micro_f1", val_f1)
+        self.log("val_auprc", val_auprc)
+        self.log("val_loss", avg_loss)
+
+    def test_step(self, batch, batch_idx):
+        items = batch
+        logits = self(items)
+        pred = logits.argmax(-1)  # pred 한 라벨
+        prob = F.softmax(logits, dim=-1)
+        return {"pred": pred, "prob": prob, "label": items["labels"]}
+
+    def test_epoch_end(self, outputs):
+        pred_all = torch.concat([x["pred"] for x in outputs])
+        prob_all = torch.concat([x["prob"] for x in outputs])
+        label_all = torch.concat([x["label"] for x in outputs])
+        test_f1 = metric.klue_re_micro_f1(pred_all.cpu().numpy(), label_all.cpu().numpy())
+        test_auprc = metric.klue_re_auprc(prob_all.cpu().numpy(), label_all.cpu().numpy())
+        self.log("test_micro_f1", test_f1)
+        self.log("test_auprc", test_auprc)
+
+    def predict_step(self, batch, batch_idx):
+        items = batch
+        logits = self(items)
+        return logits.squeeze()
+
+    def configure_optimizers(self):
+        optimizer = torch.optim.AdamW(self.parameters(), lr=self.lr)
+        scheduler = LambdaLR(optimizer=optimizer, lr_lambda=lambda step: min(1.0, float(step + 1) / (self.warm_up + 1)))
+        return [optimizer], [{"scheduler": scheduler, "interval": "step"}]
+
+    def freeze(self):
+        for name, param in self.plm.named_parameters():
+            freeze_list = []
+            if name in freeze_list:
+                param.requires_grad = False
