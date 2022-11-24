@@ -47,14 +47,11 @@ class Dataloader(pl.LightningDataModule):
 
     def find_special_token(self, entity_marker_type):
         special_tokens = []
-        subject_entity_types = ["PER", "ORG", "LOC"]
-        object_entity_types = ["PER", "ORG", "LOC", "DAT", "POH", "NOH"]
+        entity_types = ["PER", "ORG", "LOC", "DAT", "POH", "NOH"]
         if entity_marker_type == "typed_entity_marker":
-            for i in subject_entity_types:
+            for i in entity_types:
                 for j in ["", "/"]:
                     special_tokens.append(f"[{j}SUBJ-{i}]")
-            for i in object_entity_types:
-                for j in ["", "/"]:
                     special_tokens.append(f"[{j}OBJ-{i}]")
 
         elif entity_marker_type == "typed_entity_marker_punct":
