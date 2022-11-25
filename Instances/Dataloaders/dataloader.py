@@ -32,7 +32,7 @@ class Dataloader(pl.LightningDataModule):
 
         # https://huggingface.co/docs/transformers/main/en/model_doc/auto#transformers.AutoTokenizer
         # deadlock에 걸리는 경우가 존재해서 use_fast를 False로 둠
-        self.tokenizer = transformers.AutoTokenizer.from_pretrained(self.model_name, use_fast=False)
+        self.tokenizer = transformers.AutoTokenizer.from_pretrained(self.model_name)
 
         # https://www.youtube.com/watch?v=7q5NyFT8REg
         # https://huggingface.co/course/chapter3/2?fw=pt
@@ -42,7 +42,7 @@ class Dataloader(pl.LightningDataModule):
 
         self.new_token_count = self.tokenizer.add_tokens(tokens)  # vocab에 추가를 하며 실제로 새롭게 추가된 토큰의 수를 반환해줍니다.
 
-        special_tokens = self.find_special_token(self.entity_marker_type)  # ({"additional_special_tokens":['aba','adsf']})
+        special_tokens = self.find_special_token(self.entity_marker_type)
         self.new_special_token_count = self.tokenizer.add_special_tokens({"additional_special_tokens": special_tokens})
 
     def find_special_token(self, entity_marker_type):
