@@ -17,6 +17,8 @@ def get_entity_position_embedding(tokenizer, entity_marker_type, special_tokens,
         sub_marker_id = tokenizer.encode("+", add_special_tokens=False)[0]
         obj_marker_id = tokenizer.encode("^", add_special_tokens=False)[0]
 
+    # subject/object special token(ex:'@', '#') 위치 정보를 담는 리스트 생성
+    # e.g. subj_emb[0] = [13, 15], obj_emb[0] = [20, 22]
     subj_emb, obj_emb = [], []
     for ids in input_ids:
         subj_pos, obj_pos = [], []
