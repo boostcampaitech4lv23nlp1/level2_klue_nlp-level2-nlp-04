@@ -6,11 +6,11 @@ def get_entity_position_embedding(tokenizer, entity_marker_type, special_tokens,
     subj_id, obj_id = [], []
 
     if entity_marker_type == "typed_entity_marker":
-        for i in special_tokens:
-            if i[1] == "S" or i[1:3] == "/S":
-                subj_id.append(token2id[i])
-            elif i[1] == "O" or i[1:3] == "/O":
-                obj_id.append(token2id[i])
+        for token in special_tokens:
+            if token[1] == "S" or token[1:3] == "/S":
+                subj_id.append(token2id[token])
+            elif token[1] == "O" or token[1:3] == "/O":
+                obj_id.append(token2id[token])
 
     elif entity_marker_type == "typed_entity_marker_punct":
         subj_id, obj_id = [token2id["@"]], [token2id["#"]]
