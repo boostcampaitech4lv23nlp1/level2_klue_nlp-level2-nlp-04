@@ -283,3 +283,70 @@ class ModelWithConcat(BaseModel):
         x = torch.cat((x, y), dim=1)
         x = self.classifier2(x)
         return x
+
+
+
+class BinaryLoss(BaseModel):
+    """
+    Model with binary loss
+    """
+    def __init__(self, conf, new_vocab_size):
+        super().__init__(conf, new_vocab_size)
+		 
+        self.classifier = nn.Sequential(nn.Linear(self.input_dim, self.num_labels))
+        self.classifier2 = nn.Sequential(nn.Linear(self.input_dim, 1))
+
+        self.loss_func_2 = torch.nn.BCEWithLogitsLoss()
+
+        self.p = conf.train.bin_loss_p
+
+
+    def forward(self, items):  ## **items
+        x = self.plm(input_ids=items["input_ids"], attention_mask=items["attention_mask"], token_type_ids=items["token_type_ids"],)[
+            0
+        ]  # 최종적인 output입니다
+
+        x = x[:, 0, :]
+
+        x_1 = self.classifier(x)
+
+        x_2 = self.classifier2(x)
+
+        return x_1, x_2
+
+    def training_step(self, batch, batch_idx):
+        items = batch
+
+        logits, logits_2 = self(items)
+
+        loss = self.loss_func(logits, items["labels"].long())
+        loss_2 = self.loss_func_2(logits_2.squeeze().float(), items['bin_labels'].float())
+
+        self.log("train_loss", loss)
+        self.log('additional_loss', loss_2)
+
+        return loss * (1-self.p)  + loss_2 * self.p
+    
+    def validation_step(self, batch, batch_idx):
+        items = batch
+
+        logits, _ = self(items)
+        loss = self.loss_func(logits, items["labels"].long())
+        pred = logits.argmax(-1)  # pred 한 라벨
+        prob = F.softmax(logits, dim=-1)  # 라벨 전체
+
+        return {"val_loss": loss, "pred": pred, "prob": prob, "label": items["labels"]}
+
+    def test_step(self, batch, batch_idx):
+        items = batch
+
+        logits, _ = self(items)
+        pred = logits.argmax(-1)  # pred 한 라벨
+        prob = F.softmax(logits, dim=-1)  # 라벨 전체
+        return {"pred": pred, "prob": prob, "label": items["labels"]}
+
+    def predict_step(self, batch, batch_idx):
+        items = batch
+        logits, _ = self(items)
+
+        return logits.squeeze()
