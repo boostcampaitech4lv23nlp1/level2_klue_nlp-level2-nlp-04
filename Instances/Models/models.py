@@ -298,12 +298,6 @@ class RBERT(pl.LightningModule):
 
         self.plm.resize_token_embeddings(new_vocab_size)
 
-        if self.plm.config.type_vocab_size == 1:
-            self.plm.config.type_vocab_size = 2
-            single_emb = self.plm.base_model.embeddings.token_type_embeddings
-            self.plm.base_model.embeddings.token_type_embeddings = torch.nn.Embedding(2, single_emb.embedding_dim)
-            self.plm.base_model.embeddings.token_type_embeddings.weight = torch.nn.Parameter(single_emb.weight.repeat([2, 1]))
-
         self.cls_fc_layer = FCLayer(self.model_config.hidden_size, self.model_config.hidden_size, self.dropout_rate)
         self.entity_fc_layer = FCLayer(self.model_config.hidden_size, self.model_config.hidden_size, self.dropout_rate)
         self.label_classifier = FCLayer(
