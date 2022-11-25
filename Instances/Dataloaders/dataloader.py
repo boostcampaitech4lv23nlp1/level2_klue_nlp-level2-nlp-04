@@ -7,6 +7,7 @@ from sklearn.model_selection import StratifiedShuffleSplit
 from Instances.Dataloaders.dataset import RE_Dataset
 import Utils.labels_ids as labels_ids
 from ast import literal_eval
+from Instances.Dataloaders.entity_position_embedding import get_entity_position_embedding
 
 # (train+dev), test, predict  # train 데이터의 일부를 dev 데이터 셋으로 사용합니다
 class Dataloader(pl.LightningDataModule):
@@ -18,6 +19,7 @@ class Dataloader(pl.LightningDataModule):
         self.train_ratio = conf.data.train_ratio  # train과 dev 셋의 데이터 떼올 양
         self.seed = conf.utils.seed  # seed
         self.entity_marker_type = conf.data.entity_marker_type  # 엔티티 위치 표현 유형
+        self.model_class_id = conf.model.class_id
 
         self.train_path = conf.path.train_path  # train+dev data set 경로
         self.test_path = conf.path.test_path  # test data set 경로
@@ -30,7 +32,7 @@ class Dataloader(pl.LightningDataModule):
 
         # https://huggingface.co/docs/transformers/main/en/model_doc/auto#transformers.AutoTokenizer
         # deadlock에 걸리는 경우가 존재해서 use_fast를 False로 둠
-        self.tokenizer = transformers.AutoTokenizer.from_pretrained(self.model_name, use_fast=False)
+        self.tokenizer = transformers.AutoTokenizer.from_pretrained(self.model_name)
 
         # https://www.youtube.com/watch?v=7q5NyFT8REg
         # https://huggingface.co/course/chapter3/2?fw=pt
@@ -40,19 +42,16 @@ class Dataloader(pl.LightningDataModule):
 
         self.new_token_count = self.tokenizer.add_tokens(tokens)  # vocab에 추가를 하며 실제로 새롭게 추가된 토큰의 수를 반환해줍니다.
 
-        special_tokens = self.find_special_token(self.entity_marker_type)  # ({"additional_special_tokens":['aba','adsf']})
+        special_tokens = self.find_special_token(self.entity_marker_type)
         self.new_special_token_count = self.tokenizer.add_special_tokens({"additional_special_tokens": special_tokens})
 
     def find_special_token(self, entity_marker_type):
         special_tokens = []
-        subject_entity_types = ["PER", "ORG"]
-        object_entity_types = ["PER", "ORG", "LOC", "DAT", "POH", "NOH"]
+        entity_types = ["PER", "ORG", "LOC", "DAT", "POH", "NOH"]
         if entity_marker_type == "typed_entity_marker":
-            for i in subject_entity_types:
+            for i in entity_types:
                 for j in ["", "/"]:
                     special_tokens.append(f"[{j}SUBJ-{i}]")
-            for i in object_entity_types:
-                for j in ["", "/"]:
                     special_tokens.append(f"[{j}OBJ-{i}]")
 
         elif entity_marker_type == "typed_entity_marker_punct":
@@ -65,7 +64,7 @@ class Dataloader(pl.LightningDataModule):
         entity_marker_type:
             - baseline : entity_marker_type 미사용
             - typed_entity_marker: [SUBJ-NER] subject [/SUBJ-NER], [OBJ-NER] obj [/OBJ-NER]
-            - typed_entity_marker_punct: @ * subject ner type * subject @, # ^ object ner type ^ object #
+            - typed_entity_marker_punct: @ + subject ner type + subject @, # ^ object ner type ^ object #
         """
         sents = []
         concat_entity = []
@@ -83,7 +82,7 @@ class Dataloader(pl.LightningDataModule):
                 temp_obj = f"{temp_obj_type_start} {str(obj)} {temp_obj_type_end}"
 
             elif entity_marker_type == "typed_entity_marker_punct":
-                temp_subj = f"@ * {str(subj_type)} * {str(subj)} @"
+                temp_subj = f"@ + {str(subj_type)} + {str(subj)} @"
                 temp_obj = f"# ^ {str(obj_type)} ^ {str(obj)} #"
 
             elif entity_marker_type == "baseline":
@@ -106,6 +105,10 @@ class Dataloader(pl.LightningDataModule):
             truncation=True,
             add_special_tokens=True,
         )
+
+        if entity_marker_type != "baseline":
+            if self.model_class_id == 3:
+                tokenized_sentences["e1_mask"], tokenized_sentences["e2_mask"] = get_entity_position_embedding(self.tokenizer, entity_marker_type, self.tokenizer.additional_special_tokens, tokenized_sentences["input_ids"])
         return tokenized_sentences
 
     # predict 빼고 전부 동일한 전처리

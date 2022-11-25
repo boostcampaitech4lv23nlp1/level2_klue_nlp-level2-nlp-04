@@ -1,6 +1,6 @@
 from Instances.Dataloaders.dataloader import Dataloader
 from Instances.Dataloaders.k_fold_dataloader import KFoldDataloader
-from Instances.Models.models import Model, ExampleModel1, ExampleModel2
+from Instances.Models.models import Model, BaseModel, ModelWithConcat, RBERT
 
 
 def new_instance(conf):
@@ -8,11 +8,16 @@ def new_instance(conf):
     if conf.model.class_id == 0:
         model = Model(conf, dataloader.new_vocab_size())
     elif conf.model.class_id == 1:
-        model = ExampleModel1(conf, dataloader.new_vocab_size())
+        model = BaseModel(conf, dataloader.new_vocab_size())
         print(model)
     elif conf.model.class_id == 2:
-        model = ExampleModel2(conf, dataloader.new_vocab_size())
+        model = ModelWithConcat(conf, dataloader.new_vocab_size())
         print(model)
+    elif conf.model.class_id == 3:
+        if conf.data.entity_marker_type == "baseline":
+            print("RBERT cannot be operated when 'baseline' is selected")
+            exit(1)
+        model = RBERT(conf, dataloader.new_vocab_size())
     else:
         print("해당하는 모델이 없습니다")
         exit(1)
@@ -40,9 +45,9 @@ def kfold_new_instance(conf, k):
     if conf.model.class_id == 0:
         k_model = Model(conf, k_dataloader.new_vocab_size())
     elif conf.model.class_id == 1:
-        k_model = ExampleModel1(conf, k_dataloader.new_vocab_size())
+        k_model = BaseModel(conf, k_dataloader.new_vocab_size())
     elif conf.model.class_id == 2:
-        k_model = ExampleModel2(conf, k_dataloader.new_vocab_size())
+        k_model = ModelWithConcat(conf, k_dataloader.new_vocab_size())
     else:
         print("해당하는 모델이 없습니다")
         exit(1)

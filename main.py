@@ -66,7 +66,7 @@ if __name__ == "__main__":
                 inference.k_fold_inference(args, conf)
             else:
                 inference.inference(args, conf)
-    
+
     elif args.mode == "analysis" or args.mode == "a":
         if args.saved_model is None:
             print("경로를 입력해주세요")
