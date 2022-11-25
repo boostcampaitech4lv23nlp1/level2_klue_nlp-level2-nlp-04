@@ -9,6 +9,8 @@ import Utils.labels_ids as labels_ids
 from ast import literal_eval
 from Instances.Dataloaders.entity_position_embedding import get_entity_position_embedding
 
+import Instances.Dataloaders.text_preprocessing as preprocessing
+
 # (train+dev), test, predict  # train 데이터의 일부를 dev 데이터 셋으로 사용합니다
 class Dataloader(pl.LightningDataModule):
     def __init__(self, conf):
@@ -33,6 +35,7 @@ class Dataloader(pl.LightningDataModule):
         # https://huggingface.co/docs/transformers/main/en/model_doc/auto#transformers.AutoTokenizer
         # deadlock에 걸리는 경우가 존재해서 use_fast를 False로 둠
         self.tokenizer = transformers.AutoTokenizer.from_pretrained(self.model_name)
+        # self.tokenizer = transformers.AutoTokenizer.from_pretrained("JunHyung1206/sajo_klue_roberta_large")
 
         # https://www.youtube.com/watch?v=7q5NyFT8REg
         # https://huggingface.co/course/chapter3/2?fw=pt
