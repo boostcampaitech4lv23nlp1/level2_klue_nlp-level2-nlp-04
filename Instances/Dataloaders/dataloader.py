@@ -42,7 +42,7 @@ class Dataloader(pl.LightningDataModule):
         # https://huggingface.co/course/chapter3/2?fw=pt
         self.data_collator = transformers.DataCollatorWithPadding(self.tokenizer)  # 다이나믹 패딩 유튜브 -> 잘안되는거 같음 (train 237로만 잘르고 dev 241)
 
-        tokens = ['""']  # 추가할 토큰들 지정 ex) "" 토큰
+        tokens = []  # 추가할 토큰들 지정 ex) "" 토큰
 
         self.new_token_count = self.tokenizer.add_tokens(tokens)  # vocab에 추가를 하며 실제로 새롭게 추가된 토큰의 수를 반환해줍니다.
 
