@@ -21,6 +21,7 @@ class Dataloader(pl.LightningDataModule):
         self.train_ratio = conf.data.train_ratio  # train과 dev 셋의 데이터 떼올 양
         self.seed = conf.utils.seed  # seed
         self.entity_marker_type = conf.data.entity_marker_type  # 엔티티 위치 표현 유형
+        self.use_preprocessing = conf.data.use_preprocessing  # preprocessing 적용 유무
         self.model_class_id = conf.model.class_id
 
         self.train_path = conf.path.train_path  # train+dev data set 경로
@@ -34,8 +35,8 @@ class Dataloader(pl.LightningDataModule):
 
         # https://huggingface.co/docs/transformers/main/en/model_doc/auto#transformers.AutoTokenizer
         # deadlock에 걸리는 경우가 존재해서 use_fast를 False로 둠
-        self.tokenizer = transformers.AutoTokenizer.from_pretrained(self.model_name)
-        # self.tokenizer = transformers.AutoTokenizer.from_pretrained("JunHyung1206/sajo_klue_roberta_large")
+        # self.tokenizer = transformers.AutoTokenizer.from_pretrained(self.model_name)
+        self.tokenizer = transformers.AutoTokenizer.from_pretrained("JunHyung1206/sajo_klue_roberta_large")
 
         # https://www.youtube.com/watch?v=7q5NyFT8REg
         # https://huggingface.co/course/chapter3/2?fw=pt
@@ -97,8 +98,13 @@ class Dataloader(pl.LightningDataModule):
             else:
                 sent = sent[:obj_start] + temp_obj + sent[obj_end + 1 : subj_start] + temp_subj + sent[subj_end + 1 :]
 
-            sents.append(sent)
-            concat_entity.append(str(subj) + self.tokenizer.sep_token + str(obj))
+            # 텍스트 전처리 적용 유무
+            if self.use_preprocessing:
+                sents.append(preprocessing.text_preprocessing(sent))
+                concat_entity.append(preprocessing.text_preprocessing(str(subj) + self.tokenizer.sep_token + str(obj)))
+            else:
+                sents.append(sent)
+                concat_entity.append(str(subj) + self.tokenizer.sep_token + str(obj))
 
         tokenized_sentences = self.tokenizer(
             concat_entity,
