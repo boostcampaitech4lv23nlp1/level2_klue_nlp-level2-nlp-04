@@ -35,8 +35,8 @@ class Dataloader(pl.LightningDataModule):
 
         # https://huggingface.co/docs/transformers/main/en/model_doc/auto#transformers.AutoTokenizer
         # deadlock에 걸리는 경우가 존재해서 use_fast를 False로 둠
-        # self.tokenizer = transformers.AutoTokenizer.from_pretrained(self.model_name)
-        self.tokenizer = transformers.AutoTokenizer.from_pretrained("JunHyung1206/sajo_klue_roberta_large")
+        self.tokenizer = transformers.AutoTokenizer.from_pretrained(self.model_name)
+        # self.tokenizer = transformers.AutoTokenizer.from_pretrained("JunHyung1206/sajo_klue_roberta_large")
 
         # https://www.youtube.com/watch?v=7q5NyFT8REg
         # https://huggingface.co/course/chapter3/2?fw=pt
@@ -123,9 +123,9 @@ class Dataloader(pl.LightningDataModule):
     # predict 빼고 전부 동일한 전처리
     def preprocessing(self, dataframe):  # 전체 전처리 과정을 모두 거쳐서 dataset input 형태로 구성할 수 있도록 하고 predict일 땐 빈 배열 반환
         """처음 불러온 csv 파일을 원하는 형태의 DataFrame으로 변경 시켜줍니다."""
-        subj_df = dataframe['subject_entity'].apply(lambda x:pd.Series(literal_eval(x))).add_prefix("subj_")
-        obj_df = dataframe['object_entity'].apply(lambda x:pd.Series(literal_eval(x))).add_prefix("obj_")
-        
+        subj_df = dataframe["subject_entity"].apply(lambda x: pd.Series(literal_eval(x))).add_prefix("subj_")
+        obj_df = dataframe["object_entity"].apply(lambda x: pd.Series(literal_eval(x))).add_prefix("obj_")
+
         subj_df.reset_index(drop=True, inplace=True)
         obj_df.reset_index(drop=True, inplace=True)
         all_dataset = dataframe[["id", "sentence", "label"]]
