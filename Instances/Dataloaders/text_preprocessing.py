@@ -2,9 +2,13 @@ import re
 
 
 # 따옴표 처리
-## """" 제거
-def four_double_quotation_delete(sentence):
-    sentence = re.sub('""""', "", sentence)
+## """" 제거  ("""")이 하나인 경우 : 그 안의 문장이 생략되었다 보고 마스크 토큰 삽입
+## 다수인 경우 전부 "로 치환
+def four_double_quotation_delete(sentence, tokenizer):
+    if len(re.findall('""""', sentence)) == 1:
+        sentence = re.sub('""""', tokenizer.mask_token, sentence)
+    else:
+        sentence = re.sub('""""', '"', sentence)
     return sentence
 
 
@@ -57,7 +61,7 @@ def cdot_consist(sentence):
 
 # 특수기호 제거
 def symbol_delete(sentence):
-    sentence = re.sub(r"[▲△▴▵□☎☏⁺∞Ⓐ®𑀫𑀕𑀥★☆♡♥※˘³𑀫𑀕𑀥]", " ", sentence)
+    sentence = re.sub(r"[▲△▴▵□☎☏⁺∞Ⓐ®𑀫𑀕𑀥★☆♡♥※˘³𑀫𑀕𑀥↔]", " ", sentence)
 
     return sentence
 
@@ -66,6 +70,17 @@ def symbol_delete(sentence):
 def frac_consist(sentence):
     sentence = re.sub(r"⅓", " 1/3", sentence)
     sentence = re.sub(r"⅔", " 2/3", sentence)
+    return sentence
+
+
+# 숫자 구두점 제거  1,000 -> 1000
+def num_punctuation_delete(sentence):
+    m = re.search(r"[0-9]{1,3},[0-9]{3}(,[0-9]{3}){0,}", sentence)
+    while m != None:
+        origin = sentence[m.start() : m.end()]
+        replace_num = re.sub(",", "", origin)
+        sentence = sentence[: m.start()] + replace_num + sentence[m.end() :]
+        m = re.search(r"[0-9]{1,3},[0-9]{3}(,[0-9]{3}){0,}", sentence)
     return sentence
 
 
@@ -147,7 +162,7 @@ def unicode_err_consist(sentence):
 # 전체 텍스트 전처리
 def text_preprocessing(sentence, tokenizer):
     # 따옴표 계열 처리 과정
-    sentence = four_double_quotation_delete(sentence)
+    sentence = four_double_quotation_delete(sentence, tokenizer)
     sentence = double_quotation_to_quotation(sentence)
     sentence = quotation_consist(sentence)
 
@@ -164,6 +179,9 @@ def text_preprocessing(sentence, tokenizer):
 
     # 특수 기호 제거
     sentence = symbol_delete(sentence)
+
+    # 숫자 구두점 제거
+    sentence = num_punctuation_delete(sentence)
 
     # 분수 표현(야구) 통일
     sentence = frac_consist(sentence)
