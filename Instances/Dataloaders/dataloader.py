@@ -74,7 +74,7 @@ class Dataloader(pl.LightningDataModule):
         concat_entity = []
 
         for sent, subj, subj_start, subj_end, subj_type, obj, obj_start, obj_end, obj_type in zip(
-            dataframe["sentence"], dataframe["subject_entity"], dataframe["subject_start"], dataframe["subject_end"], dataframe["subject_type"], dataframe["object_entity"], dataframe["object_start"], dataframe["object_end"], dataframe["object_type"]
+            dataframe["sentence"], dataframe["subj_word"], dataframe["subj_start_idx"], dataframe["subj_end_idx"], dataframe["subj_type"], dataframe["obj_word"], dataframe["obj_start_idx"], dataframe["obj_end_idx"], dataframe["obj_type"]
         ):
             if entity_marker_type == "typed_entity_marker":
                 temp_subj_type_start = f"[SUBJ-{str(subj_type)}]"
@@ -123,39 +123,14 @@ class Dataloader(pl.LightningDataModule):
     # predict 빼고 전부 동일한 전처리
     def preprocessing(self, dataframe):  # 전체 전처리 과정을 모두 거쳐서 dataset input 형태로 구성할 수 있도록 하고 predict일 땐 빈 배열 반환
         """처음 불러온 csv 파일을 원하는 형태의 DataFrame으로 변경 시켜줍니다."""
-        subject_entity, subject_start, subject_end, subject_type = [], [], [], []
-        object_entity, object_start, object_end, object_type = [], [], [], []
-
-        for s, o in zip(dataframe["subject_entity"], dataframe["object_entity"]):
-            s_dict = literal_eval(s)
-            o_dict = literal_eval(o)
-
-            subject_entity.append(s_dict["word"])
-            subject_start.append(s_dict["start_idx"])
-            subject_end.append(s_dict["end_idx"])
-            subject_type.append(s_dict["type"])
-
-            object_entity.append(o_dict["word"])
-            object_start.append(o_dict["start_idx"])
-            object_end.append(o_dict["end_idx"])
-            object_type.append(o_dict["type"])
-
-        entity_dataset = pd.DataFrame(
-            {
-                "subject_entity": subject_entity,
-                "subject_start": subject_start,
-                "subject_end": subject_end,
-                "subject_type": subject_type,
-                "object_entity": object_entity,
-                "object_start": object_start,
-                "object_end": object_end,
-                "object_type": object_type,
-            }
-        )
-        entity_dataset.reset_index(drop=True, inplace=True)
+        subj_df = dataframe['subject_entity'].apply(lambda x:pd.Series(literal_eval(x))).add_prefix("subj_")
+        obj_df = dataframe['object_entity'].apply(lambda x:pd.Series(literal_eval(x))).add_prefix("obj_")
+        
+        subj_df.reset_index(drop=True, inplace=True)
+        obj_df.reset_index(drop=True, inplace=True)
         all_dataset = dataframe[["id", "sentence", "label"]]
         all_dataset.reset_index(drop=True, inplace=True)
-        preprocessing_dataframe = pd.concat([all_dataset, entity_dataset], axis=1)
+        preprocessing_dataframe = pd.concat([all_dataset, subj_df, obj_df], axis=1)
 
         # 현재 train_dataset = load_data("../dataset/train/train.csv")까지 거친 상태
 
