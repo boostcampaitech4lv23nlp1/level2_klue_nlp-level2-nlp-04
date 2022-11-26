@@ -20,8 +20,8 @@ def double_quotation_to_quotation(sentence):
 
 ## 따옴표 계열 통일
 def quotation_consist(sentence):
-    sentence = re.sub(r"[‘’′＇`]", "'", sentence)
-    sentence = re.sub(r"[“”]", '"', sentence)
+    sentence = re.sub(r"[′＇`]", "'", sentence)
+    # sentence = re.sub(r"[“”]", '"', sentence)
     return sentence
 
 
@@ -35,8 +35,8 @@ def parenthesis_consist(sentence):
 
 ## 브래킷 처리
 def bracket_consist(sentence):
-    sentence = re.sub(r"[«≪〈]", "《", sentence)
-    sentence = re.sub(r"[»≫〉]", "》", sentence)
+    sentence = re.sub(r"[«≪]", "《", sentence)
+    sentence = re.sub(r"[»≫]", "》", sentence)
     return sentence
 
 
