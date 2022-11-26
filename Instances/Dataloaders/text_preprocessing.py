@@ -57,7 +57,8 @@ def cdot_consist(sentence):
 
 # 특수기호 제거
 def symbol_delete(sentence):
-    sentence = re.sub(r"[▲△▴▵□☎☏⁺∞Ⓐ®𑀫𑀕𑀥★☆♡♥※˘³𑀫𑀕𑀥]", "", sentence)
+    sentence = re.sub(r"[▲△▴▵□☎☏⁺∞Ⓐ®𑀫𑀕𑀥★☆♡♥※˘³𑀫𑀕𑀥]", " ", sentence)
+
     return sentence
 
 
@@ -86,18 +87,47 @@ def measure_consist(sentence):
     sentence = re.sub(r"㎿", "MW", sentence)
     sentence = re.sub(r"ｍ", "m", sentence)
     sentence = re.sub(r"°", "도", sentence)
-    sentence = re.sub(r"℃", "도", sentence)
 
     return sentence
 
 
-# 로마 숫자 -> 숫자로 변경
+# 로마 숫자 -> 알파벳으로 변경
 def roma_to_num(sentence):
-    roma_Alpha_Upper = ["Ⅰ", "Ⅱ", "Ⅲ", "Ⅳ", "Ⅴ", "Ⅵ", "Ⅶ", "Ⅷ", "Ⅸ", "Ⅹ", "Ⅺ", "Ⅻ"]
-    roma_Alpha_Lower = ["ⅰ", "ⅱ", "ⅲ", "ⅳ", "ⅴ", "ⅵ", "ⅶ", "ⅷ", "ⅸ", "ⅹ", "ⅺ", "ⅻ"]
-    for i in range(0, 12):
-        sentence = re.sub(roma_Alpha_Upper[i], str(i + 1), sentence)
-        sentence = re.sub(roma_Alpha_Lower[i], str(i + 1), sentence)
+    # https://unicode-table.com/kr/sets/roman-numerals/
+    sentence = re.sub(r"Ⅰ", "I", sentence)
+    sentence = re.sub(r"Ⅱ", "II", sentence)
+    sentence = re.sub(r"Ⅲ", "III", sentence)
+    sentence = re.sub(r"Ⅳ", "IV", sentence)
+    sentence = re.sub(r"Ⅴ", "V", sentence)
+    sentence = re.sub(r"Ⅵ", "VI", sentence)
+    sentence = re.sub(r"Ⅶ", "VII", sentence)
+    sentence = re.sub(r"Ⅷ", "VIII", sentence)
+    sentence = re.sub(r"Ⅸ", "IX", sentence)
+    sentence = re.sub(r"Ⅹ", "X", sentence)
+    sentence = re.sub(r"Ⅺ", "XI", sentence)
+    sentence = re.sub(r"Ⅻ", "XII", sentence)
+    sentence = re.sub(r"Ⅼ", "L", sentence)
+    sentence = re.sub(r"Ⅽ", "C", sentence)
+    sentence = re.sub(r"Ⅾ", "D", sentence)
+    sentence = re.sub(r"Ⅿ", "M", sentence)
+
+    sentence = re.sub(r"ⅰ", "i", sentence)
+    sentence = re.sub(r"ⅱ", "ii", sentence)
+    sentence = re.sub(r"ⅲ", "iii", sentence)
+    sentence = re.sub(r"ⅳ", "iv", sentence)
+    sentence = re.sub(r"ⅴ", "v", sentence)
+    sentence = re.sub(r"ⅵ", "vi", sentence)
+    sentence = re.sub(r"ⅶ", "vii", sentence)
+    sentence = re.sub(r"ⅷ", "viii", sentence)
+    sentence = re.sub(r"ⅸ", "ix", sentence)
+    sentence = re.sub(r"ⅹ", "x", sentence)
+    sentence = re.sub(r"ⅺ", "xi", sentence)
+    sentence = re.sub(r"ⅻ", "xii", sentence)
+    sentence = re.sub(r"ⅼ", "l", sentence)
+    sentence = re.sub(r"ⅽ", "c", sentence)
+    sentence = re.sub(r"ⅾ", "d", sentence)
+    sentence = re.sub(r"ⅿ", "m", sentence)
+
     return sentence
 
 
@@ -115,7 +145,7 @@ def unicode_err_consist(sentence):
 
 
 # 전체 텍스트 전처리
-def text_preprocessing(sentence):
+def text_preprocessing(sentence, tokenizer):
     # 따옴표 계열 처리 과정
     sentence = four_double_quotation_delete(sentence)
     sentence = double_quotation_to_quotation(sentence)
@@ -150,11 +180,12 @@ def text_preprocessing(sentence):
     # 그외 유니코드 이슈 처리
     sentence = unicode_err_consist(sentence)
 
-    # 빈괄호 제거
-    sentence = re.sub(r"()", "", sentence)
-    sentence = re.sub(r"《》", "", sentence)
-
     # 공백 두번 이상인 것 처리 및 앞 뒤 공백 제거
-    sentence = re.sub(r" +", " ", sentence).strip()
+    sentence = re.sub(r"\s+", " ", sentence).strip()
+
+    # 빈괄호 마스크 처리 (의미상 제거되면 안됨)
+    mask_pattern = tokenizer.mask_token
+    sentence = re.sub(r"\(\s?\)", mask_pattern, sentence)
+    sentence = re.sub(r"《\s?》", mask_pattern, sentence)
 
     return sentence

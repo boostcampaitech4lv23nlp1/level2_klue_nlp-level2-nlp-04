@@ -100,8 +100,8 @@ class Dataloader(pl.LightningDataModule):
 
             # 텍스트 전처리 적용 유무
             if self.use_preprocessing:
-                sents.append(preprocessing.text_preprocessing(sent))
-                concat_entity.append(preprocessing.text_preprocessing(str(subj) + self.tokenizer.sep_token + str(obj)))
+                sents.append(preprocessing.text_preprocessing(sent, self.tokenizer))
+                concat_entity.append(preprocessing.text_preprocessing(str(subj) + self.tokenizer.sep_token + str(obj), self.tokenizer))
             else:
                 sents.append(sent)
                 concat_entity.append(str(subj) + self.tokenizer.sep_token + str(obj))
