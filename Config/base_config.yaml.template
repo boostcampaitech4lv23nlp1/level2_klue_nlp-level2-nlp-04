@@ -18,8 +18,9 @@ train:
   max_epoch: 1
   batch_size: 32
   lr: 1e-5
-  loss: focal # [ce, focal]
+  loss: focal # [ce, focal, labelsmoothing]
   focal_gamma: 2.0
+  smoothing: 0.1
   warm_up: 0
   use_freeze: False
   precision: 32 # defalue: 32
