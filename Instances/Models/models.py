@@ -648,3 +648,4 @@ class BinaryLoss(BaseModel):
         logits, _ = self(items)
 
         return logits.squeeze()
+

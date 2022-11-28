@@ -5,7 +5,7 @@ def get_entity_position_embedding(tokenizer, entity_marker_type, special_tokens,
     token2id = {token: idx for token, idx in zip(tokenizer.all_special_tokens, tokenizer.all_special_ids)}
     subj_id, obj_id = [], []
 
-    if entity_marker_type == "typed_entity_marker":
+    if entity_marker_type in ["typed_entity_marker", "typed_entity_marker_han"]:
         for token in special_tokens:
             if token[1] == "S" or token[1:3] == "/S":
                 subj_id.append(token2id[token])
@@ -38,7 +38,7 @@ def get_entity_position_embedding(tokenizer, entity_marker_type, special_tokens,
          obj_embeddings[0] = [0, 0, 0, 0, 0, 0, 1, 1, ... 0]
     """
     subj_embeddings, obj_embeddings = [], []
-    if entity_marker_type == "typed_entity_marker": 
+    if entity_marker_type in ["typed_entity_marker", "typed_entity_marker_han"]: 
         for s_emb, o_emb in zip(subj_emb, obj_emb):
             temp_s_embeddings, temp_o_embeddings = [0] * len(input_ids[0]), [0] * len(input_ids[0])
             temp_s_embeddings[s_emb[0] + 1 : s_emb[1]] = [1] * (s_emb[1] - (s_emb[0] + 1)) # subject entity 위치는 1로 반환

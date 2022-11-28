@@ -60,6 +60,9 @@ class Dataloader(pl.LightningDataModule):
 
         elif entity_marker_type == "typed_entity_marker_punct":
             special_tokens = ["@", "#"]
+        
+        elif entity_marker_type == "typed_entity_marker_han":
+            special_tokens = ["[SUBJ]", "[/SUBJ]", "[OBJ]", "[/OBJ]"]
 
         return special_tokens
 
@@ -69,6 +72,7 @@ class Dataloader(pl.LightningDataModule):
             - baseline : entity_marker_type 미사용
             - typed_entity_marker: [SUBJ-NER] subject [/SUBJ-NER], [OBJ-NER] obj [/OBJ-NER]
             - typed_entity_marker_punct: @ + subject ner type + subject @, # ^ object ner type ^ object #
+            - typed_entity_marker_han: [SUBJ] <NER(han)> subject [/SUBJ], [OBJ] <NER(han)> object [/OBJ]
         """
         sents = []
         concat_entity = []
@@ -88,6 +92,24 @@ class Dataloader(pl.LightningDataModule):
             elif entity_marker_type == "typed_entity_marker_punct":
                 temp_subj = f"@ + {str(subj_type)} + {str(subj)} @"
                 temp_obj = f"# ^ {str(obj_type)} ^ {str(obj)} #"
+
+            elif entity_marker_type == "typed_entity_marker_han":
+                map = {
+                    'PER': '<사람>',
+                    'ORG': '<조직>',
+                    'LOC': '<장소>',
+                    'DAT': '<시각>',
+                    'POH': '<명사>',
+                    'NOH': '<숫자>',
+                }
+
+                temp_subj_type_start = f"[SUBJ] {map[str(subj_type)]}"
+                temp_subj_type_end = f"[/SUBJ]"
+                temp_obj_type_start = f"[OBJ] {map[str(obj_type)]}"
+                temp_obj_type_end = f"[/OBJ]"
+
+                temp_subj = f"{temp_subj_type_start} {str(subj)} {temp_subj_type_end}"
+                temp_obj = f"{temp_obj_type_start} {str(obj)} {temp_obj_type_end}"
 
             elif entity_marker_type == "baseline":
                 temp_subj = str(subj)
