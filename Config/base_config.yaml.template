@@ -23,6 +23,7 @@ train:
   warm_up: 0
   use_freeze: False
   precision: 32 # defalue: 32
+  bin_loss_p: 0.2
   
 utils:
   seed: 42
