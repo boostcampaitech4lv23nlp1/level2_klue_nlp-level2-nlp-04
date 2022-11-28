@@ -1,6 +1,6 @@
 from Instances.Dataloaders.dataloader import Dataloader
 from Instances.Dataloaders.k_fold_dataloader import KFoldDataloader
-from Instances.Models.models import Model, BaseModel, ModelWithConcat, RBERT, RBERTWithLSTM, ModelWithLSTM
+from Instances.Models.models import Model, BaseModel, ModelWithConcat, BinaryLoss, RBERT, RBERTWithLSTM, ModelWithLSTM
 
 
 def new_instance(conf):
@@ -26,6 +26,8 @@ def new_instance(conf):
     elif conf.model.class_id == 5:
         model = ModelWithLSTM(conf, dataloader.new_vocab_size())
         print(model)
+    elif conf.model.class_id == 6:
+        model = BinaryLoss(conf, dataloader.new_vocab_size())
     else:
         print("해당하는 모델이 없습니다")
         exit(1)
