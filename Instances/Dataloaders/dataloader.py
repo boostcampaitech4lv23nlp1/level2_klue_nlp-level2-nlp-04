@@ -116,7 +116,7 @@ class Dataloader(pl.LightningDataModule):
         )
 
         if entity_marker_type != "baseline":
-            if self.model_class_id == 3:
+            if self.model_class_id == 3 or self.model_class_id == 4:
                 tokenized_sentences["e1_mask"], tokenized_sentences["e2_mask"] = get_entity_position_embedding(self.tokenizer, entity_marker_type, self.tokenizer.additional_special_tokens, tokenized_sentences["input_ids"])
         return tokenized_sentences
 

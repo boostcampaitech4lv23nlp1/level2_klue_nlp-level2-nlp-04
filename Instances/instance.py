@@ -1,6 +1,6 @@
 from Instances.Dataloaders.dataloader import Dataloader
 from Instances.Dataloaders.k_fold_dataloader import KFoldDataloader
-from Instances.Models.models import Model, BaseModel, ModelWithConcat, RBERT
+from Instances.Models.models import Model, BaseModel, ModelWithConcat, RBERT, RBERTWithLSTM, ModelWithLSTM
 
 
 def new_instance(conf):
@@ -18,6 +18,14 @@ def new_instance(conf):
             print("RBERT cannot be operated when 'baseline' is selected")
             exit(1)
         model = RBERT(conf, dataloader.new_vocab_size())
+    elif conf.model.class_id == 4:
+        if conf.data.entity_marker_type == "baseline":
+            print("RBERT cannot be operated when 'baseline' is selected")
+            exit(1)
+        model = RBERTWithLSTM(conf, dataloader.new_vocab_size())
+    elif conf.model.class_id == 5:
+        model = ModelWithLSTM(conf, dataloader.new_vocab_size())
+        print(model)
     else:
         print("해당하는 모델이 없습니다")
         exit(1)
