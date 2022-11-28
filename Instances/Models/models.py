@@ -31,6 +31,7 @@ class Model(pl.LightningModule):
         # print(self.plm)
         self.loss_name = conf.train.loss
         self.focal_gamma = conf.train.focal_gamma
+        self.smoothing = conf.train.smoothing
 
         self.loss_func = utils.loss_dict[conf.train.loss]
         self.use_freeze = conf.train.use_freeze
@@ -50,6 +51,8 @@ class Model(pl.LightningModule):
         logits = self(items)
         if self.loss_name == "focal":
             loss = self.loss_func(logits, items["labels"].long(), self.focal_gamma)
+        elif self.loss_name == 'labelsmoothing':
+            loss = self.loss_func(logits, items["labels"].long(), self.smoothing)
         else:
             loss = self.loss_func(logits, items["labels"].long())
         self.log("train_loss", loss)
@@ -62,6 +65,8 @@ class Model(pl.LightningModule):
         logits = self(items)
         if self.loss_name == "focal":
             loss = self.loss_func(logits, items["labels"].long(), self.focal_gamma)
+        elif self.loss_name == 'labelsmoothing':
+            loss = self.loss_func(logits, items["labels"].long(), self.smoothing)
         else:
             loss = self.loss_func(logits, items["labels"].long())
 
@@ -145,6 +150,7 @@ class BaseModel(pl.LightningModule):
 
         self.loss_name = conf.train.loss
         self.focal_gamma = conf.train.focal_gamma
+        self.smoothing = conf.train.smoothing
 
         self.loss_func = utils.loss_dict[conf.train.loss]
         self.use_freeze = conf.train.use_freeze
@@ -172,6 +178,8 @@ class BaseModel(pl.LightningModule):
         logits = self(items)
         if self.loss_name == "focal":
             loss = self.loss_func(logits, items["labels"].long(), self.focal_gamma)
+        elif self.loss_name == 'labelsmoothing':
+            loss = self.loss_func(logits, items["labels"].long(), self.smoothing)
         else:
             loss = self.loss_func(logits, items["labels"].long())
 
@@ -185,6 +193,8 @@ class BaseModel(pl.LightningModule):
         logits = self(items)
         if self.loss_name == "focal":
             loss = self.loss_func(logits, items["labels"].long(), self.focal_gamma)
+        elif self.loss_name == 'labelsmoothing':
+            loss = self.loss_func(logits, items["labels"].long(), self.smoothing)
         else:
             loss = self.loss_func(logits, items["labels"].long())
 
@@ -309,6 +319,7 @@ class RBERT(pl.LightningModule):
 
         self.loss_name = conf.train.loss
         self.focal_gamma = conf.train.focal_gamma
+        self.smoothing = conf.train.smoothing
 
         self.loss_func = utils.loss_dict[conf.train.loss]
         self.use_freeze = conf.train.use_freeze
@@ -356,6 +367,8 @@ class RBERT(pl.LightningModule):
         logits = self(items)
         if self.loss_name == "focal":
             loss = self.loss_func(logits, items["labels"].long(), self.focal_gamma)
+        elif self.loss_name == 'labelsmoothing':
+            loss = self.loss_func(logits, items["labels"].long(), self.smoothing)
         else:
             loss = self.loss_func(logits, items["labels"].long())
         self.log("train_loss", loss)
@@ -366,6 +379,8 @@ class RBERT(pl.LightningModule):
         logits = self(items)
         if self.loss_name == "focal":
             loss = self.loss_func(logits, items["labels"].long(), self.focal_gamma)
+        elif self.loss_name == 'labelsmoothing':
+            loss = self.loss_func(logits, items["labels"].long(), self.smoothing)
         else:
             loss = self.loss_func(logits, items["labels"].long())
         pred = logits.argmax(-1)
