@@ -16,7 +16,7 @@ import Instances.Dataloaders.text_preprocessing as preprocessing
 
 
 class KFoldDataloader(pl.LightningDataModule):
-    def __init__(self, conf):
+    def __init__(self, conf, k):
         super().__init__()
         self.model_name = conf.model.model_name  # 토크나이저를 받기 위한 backbone 모델의 이름
         self.batch_size = conf.train.batch_size  # 배치 사이즈
@@ -30,6 +30,9 @@ class KFoldDataloader(pl.LightningDataModule):
         self.train_path = conf.path.train_path  # train+dev data set 경로
         self.test_path = conf.path.test_path  # test data set 경로
         self.predict_path = conf.path.predict_path  # predict data set 경로
+
+        self.k = k  # 현재 해당하는 dataloader
+        self.num_split = conf.k_fold.num_folds
 
         self.train_dataset = None
         self.val_dataset = None
