@@ -58,6 +58,20 @@ def kfold_new_instance(conf, k):
         k_model = BaseModel(conf, k_dataloader.new_vocab_size())
     elif conf.model.class_id == 2:
         k_model = ModelWithConcat(conf, k_dataloader.new_vocab_size())
+    elif conf.model.class_id == 3:
+        if conf.data.entity_marker_type == "baseline":
+            print("RBERT cannot be operated when 'baseline' is selected")
+            exit(1)
+        k_model = RBERT(conf, k_dataloader.new_vocab_size())
+    elif conf.model.class_id == 4:
+        if conf.data.entity_marker_type == "baseline":
+            print("RBERT cannot be operated when 'baseline' is selected")
+            exit(1)
+        k_model = RBERTWithLSTM(conf, k_dataloader.new_vocab_size())
+    elif conf.model.class_id == 5:
+        k_model = ModelWithLSTM(conf, k_dataloader.new_vocab_size())
+    elif conf.model.class_id == 6:
+        k_model = BinaryLoss(conf, k_dataloader.new_vocab_size())
     else:
         print("해당하는 모델이 없습니다")
         exit(1)
