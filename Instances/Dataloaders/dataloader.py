@@ -97,14 +97,13 @@ class Dataloader(pl.LightningDataModule):
                 sent = sent[:subj_start] + temp_subj + sent[subj_end + 1 : obj_start] + temp_obj + sent[obj_end + 1 :]
             else:
                 sent = sent[:obj_start] + temp_obj + sent[obj_end + 1 : subj_start] + temp_subj + sent[subj_end + 1 :]
-            entity_korean = {"PER": "사람", "ORG": "기관", "LOC": "장소", "DAT": "날짜", "POH": "대체어", "NOH": "기타"}
-            # 텍스트 전처리 적용 유무
+
             if self.use_preprocessing:
                 sents.append(preprocessing.text_preprocessing(sent, self.tokenizer))
-                concat_entity.append(preprocessing.text_preprocessing(str(subj) + "(" + entity_korean[str(subj_type)] + ")" + "과" + str(obj) + "(" + entity_korean[str(obj_type)] + ")" + "의 관계?", self.tokenizer))
+                concat_entity.append(preprocessing.text_preprocessing(str(subj) + self.tokenizer.sep_token + str(obj), self.tokenizer))
             else:
                 sents.append(sent)
-                concat_entity.append(str(subj) + "(" + entity_korean[str(subj_type)] + ")" + "과" + str(obj) + "(" + entity_korean[str(obj_type)] + ")" + "의 관계?")
+                concat_entity.append(str(subj) + self.tokenizer.sep_token + str(obj))
 
         tokenized_sentences = self.tokenizer(
             concat_entity,
