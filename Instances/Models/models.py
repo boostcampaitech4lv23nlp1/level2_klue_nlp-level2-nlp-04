@@ -648,3 +648,18 @@ class BinaryLoss(BaseModel):
         logits, _ = self(items)
 
         return logits.squeeze()
+
+
+class BaseModelWithPooling(BaseModel):
+
+    def forward(self, items):  ## **items
+        x = self.plm(input_ids=items["input_ids"], attention_mask=items["attention_mask"], token_type_ids=items["token_type_ids"])[0] # pooler까지 거친 최종적인 output입니다
+
+        attention_mask = items['attention_mask']
+        input_mask_expanded = attention_mask.unsqueeze(-1).expand(x.size()).float()
+        x[input_mask_expanded == 0] = -1e9  # Set padding tokens to large negative value
+        x = torch.max(x, 1)[0]
+
+        x = self.classifier(x)  # 분류기를 거칩니다
+        return x
+    
