@@ -106,8 +106,8 @@ class Dataloader(pl.LightningDataModule):
                 concat_entity.append(str(subj) + self.tokenizer.sep_token + str(obj))
 
         tokenized_sentences = self.tokenizer(
-            concat_entity,
             sents,
+            concat_entity,
             return_tensors="pt",
             padding=True,
             truncation=True,
