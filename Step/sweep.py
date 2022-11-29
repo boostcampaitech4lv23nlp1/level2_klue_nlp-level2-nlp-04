@@ -13,7 +13,7 @@ def sweep(args, conf, exp_count):
     sweep_config = {
         "method": "bayes",
         # "method": "grid",
-        "parameters": {"lr": {"distribution": "uniform", "min": 5e-6, "max": 1e-5}, "batch_size": {"values": [16, 32]}},
+        "parameters": {"lr": {"distribution": "uniform", "min": 5e-6, "max": 1e-5}},
         "metric": {
             "name": "test_micro_f1",
             "goal": "maximize",
@@ -29,7 +29,6 @@ def sweep(args, conf, exp_count):
         wandb.init(config=config)
         config = wandb.config
         conf.train.lr = config.lr
-        conf.train.batch_size = config.batch_size
 
         dataloader, model = instance.new_instance(conf)
 
