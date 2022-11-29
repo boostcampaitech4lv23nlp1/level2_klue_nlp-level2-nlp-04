@@ -11,26 +11,26 @@ def sweep(args, conf, exp_count):
     project_name = conf.wandb.project
 
     sweep_config = {
-        # "method": "bayes",
-        "method": "grid",
-        "parameters": {
-            "lr": {"values": [5e-6, 6e-6, 7e-6, 8e-6, 9e-6, 10e-6]},
-        },
+        "method": "bayes",
+        # "method": "grid",
+        "parameters": {"lr": {"distribution": "uniform", "min": 5e-6, "max": 1e-5}, "batch_size": {"values": [16, 32]}},
+        "metric": {
+            "name": "test_micro_f1",
+            "goal": "maximize",
+        },  # test_micro_f1이 최대화 되는 방향으로 학습합니다
         # "early_terminate": {
         #     "type": "hyperband",
         #     "max_iter": 30,  # hyperband 공부 필요
         #     "s": 2,
         # },
-        "metric": {
-            "name": "test_micro_f1",
-            "goal": "maximize",
-        },  # test_micro_f1이 최대화 되는 방향으로 학습합니다
     }
 
     def sweep_train(config=None):
         wandb.init(config=config)
         config = wandb.config
         conf.train.lr = config.lr
+        conf.train.batch_size = config.batch_size
+
         dataloader, model = instance.new_instance(conf)
 
         wandb_logger = WandbLogger(project=project_name)
