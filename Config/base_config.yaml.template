@@ -25,6 +25,7 @@ train:
   use_freeze: False
   precision: 32 # defalue: 32
   bin_loss_p: 0.2
+  add_question: False
   
 utils:
   seed: 42
