@@ -103,7 +103,7 @@ class Dataloader(pl.LightningDataModule):
             if self.use_preprocessing:
                 sents.append(preprocessing.text_preprocessing(sent, self.tokenizer))
                 if self.add_question:
-                    concat_entity.append(preprocessing.text_preprocessing(f"{str(subj)} {str(obj)} 관계?"))
+                    concat_entity.append(preprocessing.text_preprocessing(f"{str(subj)} {str(obj)} 관계?", self.tokenizer))
                 else:
                     concat_entity.append(preprocessing.text_preprocessing(str(subj) + self.tokenizer.sep_token + str(obj), self.tokenizer))
             else:
