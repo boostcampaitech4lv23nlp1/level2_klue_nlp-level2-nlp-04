@@ -113,13 +113,18 @@ class Model(pl.LightningModule):
 
     ## Warm-up 단계 밑의 링크 참고하여 작성
     ## https://pytorch-lightning.readthedocs.io/en/stable/common/optimization.html
-    def configure_optimizers(self):
+    def configure_optimizers(self, batch):
         optimizer = torch.optim.AdamW(self.parameters(), lr=self.lr)  # 추후에 알려드릴 예정
-        scheduler = LambdaLR(
+        # scheduler = LambdaLR(
+        #     optimizer=optimizer,
+        #     lr_lambda=lambda step: min(1.0, float(step + 1) / (self.warm_up + 1)),
+        # )
+        scheduler = transformers.get_coine_scedule_with_warmup(
             optimizer=optimizer,
-            lr_lambda=lambda step: min(1.0, float(step + 1) / (self.warm_up + 1)),
+            num_warmup_steps=self.warm_up * self.trainer.estimated_stepping_batches,
+            num_training_steps=self.trainer.estimated_stepping_batches
         )
-        return [optimizer], [{"scheduler": scheduler, "interval": "step"}]
+        return [optimizer], [{"scheduler": scheduler, "interval": "step", "frequency":1}]
 
     def freeze(self):
         for name, param in self.plm.named_parameters():
@@ -243,11 +248,16 @@ class BaseModel(pl.LightningModule):
     ## https://pytorch-lightning.readthedocs.io/en/stable/common/optimization.html
     def configure_optimizers(self):
         optimizer = torch.optim.AdamW(self.parameters(), lr=self.lr)  # 추후에 알려드릴 예정
-        scheduler = LambdaLR(
+        # scheduler = LambdaLR(
+        #     optimizer=optimizer,
+        #     lr_lambda=lambda step: min(1.0, float(step + 1) / (self.warm_up + 1)),
+        # )
+        scheduler = transformers.get_coine_scedule_with_warmup(
             optimizer=optimizer,
-            lr_lambda=lambda step: min(1.0, float(step + 1) / (self.warm_up + 1)),
+            num_warmup_steps=self.warm_up * self.trainer.estimated_stepping_batches,
+            num_training_steps=self.trainer.estimated_stepping_batches
         )
-        return [optimizer], [{"scheduler": scheduler, "interval": "step"}]
+        return [optimizer], [{"scheduler": scheduler, "interval": "step", "frequency":1}]
 
     def freeze(self):
         for name, param in self.plm.named_parameters():
@@ -300,9 +310,15 @@ class RBERT(pl.LightningModule):
         self.save_hyperparameters()
         self.model_name = conf.model.model_name
         self.lr = conf.train.lr
-        self.model_config = transformers.AutoConfig.from_pretrained(self.model_name)
-        self.model_config.num_labels = 30
-        self.plm = transformers.AutoModel.from_pretrained(self.model_name, config=self.model_config)
+        if 'xlm-rogerta-x' in self.model_name:
+             self.model_config = transformers.XLMRobertaXLConfig.from_pretrained(self.model_name)
+             self.model_config.num_labels = 30
+             self.plm = transformers.XLMRobertaXLModel.from_pretrained(self.model_name, config=self.model_config)
+        else:
+            self.model_config = transformers.AutoConfig.from_pretrained(self.model_name)
+            self.model_config.num_labels = 30
+            self.plm = transformers.AutoModel.from_pretrained(self.model_name, config=self.model_config)
+        
         self.warm_up = conf.train.warm_up
         self.dropout_rate = 0.1
 
@@ -343,7 +359,7 @@ class RBERT(pl.LightningModule):
         outputs = self.plm(
             input_ids=items["input_ids"],
             attention_mask=items["attention_mask"],
-            token_type_ids=items["token_type_ids"],
+            # token_type_ids=items["token_type_ids"], # xlm은 주석처리 해야 함.
         )
         sequence_output = outputs.last_hidden_state
         pooler_output = outputs.pooler_output
@@ -421,8 +437,13 @@ class RBERT(pl.LightningModule):
 
     def configure_optimizers(self):
         optimizer = torch.optim.AdamW(self.parameters(), lr=self.lr)
-        scheduler = LambdaLR(optimizer=optimizer, lr_lambda=lambda step: min(1.0, float(step + 1) / (self.warm_up + 1)))
-        return [optimizer], [{"scheduler": scheduler, "interval": "step"}]
+        # scheduler = LambdaLR(optimizer=optimizer, lr_lambda=lambda step: min(1.0, float(step + 1) / (self.warm_up + 1)))
+        scheduler = transformers.get_coine_scedule_with_warmup(
+            optimizer=optimizer,
+            num_warmup_steps=self.warm_up * self.trainer.estimated_stepping_batches,
+            num_training_steps=self.trainer.estimated_stepping_batches
+        )
+        return [optimizer], [{"scheduler": scheduler, "interval": "step", "frequency":1}]
 
     def freeze(self):
         for name, param in self.plm.named_parameters():
@@ -557,8 +578,13 @@ class RBERTWithLSTM(pl.LightningModule):
 
     def configure_optimizers(self):
         optimizer = torch.optim.AdamW(self.parameters(), lr=self.lr)
-        scheduler = LambdaLR(optimizer=optimizer, lr_lambda=lambda step: min(1.0, float(step + 1) / (self.warm_up + 1)))
-        return [optimizer], [{"scheduler": scheduler, "interval": "step"}]
+        # scheduler = LambdaLR(optimizer=optimizer, lr_lambda=lambda step: min(1.0, float(step + 1) / (self.warm_up + 1)))
+        scheduler = transformers.get_coine_scedule_with_warmup(
+            optimizer=optimizer,
+            num_warmup_steps=self.warm_up * self.trainer.estimated_stepping_batches,
+            num_training_steps=self.trainer.estimated_stepping_batches
+        )
+        return [optimizer], [{"scheduler": scheduler, "interval": "step", "frequency":1}]
 
     def freeze(self):
         for name, param in self.plm.named_parameters():
