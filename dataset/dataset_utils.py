@@ -73,8 +73,8 @@ def sentence_with_entity_marker(df):
         obj_start_idx = df['obj_start_idx'].loc[i]
         obj_end_idx = df['obj_end_idx'].loc[i]
         
-        df['sub_extracted'].loc[i] = df['sentence'].loc[i][sub_start_idx:sub_end_idx+1]
-        df['obj_extracted'].loc[i] = df['sentence'].loc[i][obj_start_idx:obj_end_idx+1]
+        df['sub_extracted'].loc[i] = df['sentence'].loc[i][sub_start_idx:sub_end_idx]
+        df['obj_extracted'].loc[i] = df['sentence'].loc[i][obj_start_idx:obj_end_idx]
         
         df['sentence_with_entity_marker'].loc[i] = list(df['sentence'].loc[i])
         
@@ -138,6 +138,7 @@ class entityProcessing():
 
         return sub_word, obj_word
 
+    # 원본 엔티티를 보존해야 할 때만 사용
     def entity_check(self, df, aug_method_name):
         """변형 과정에서 entity 부분이 변형되었는지 확인합니다.
         만약 변형되었다면 원래의 entity로 다시 고쳐줍니다.
@@ -219,6 +220,15 @@ class entityProcessing():
         df[aug_method_name+'_clean'] = df[aug_method_name+'_clean'].apply(lambda x: x.replace('#', ''))
         # df[aug_method_name+'_clean'] = df[aug_method_name+'_clean'].apply(lambda x: x.replace('  ', ' '))
         return df
+
+    # 원본 엔티티를 보존해야 할 때만 사용.
+    def entity_check_after_cleaning(self, df, aug_method_name):
+        for i in range(len(df.index)):
+            if df['sub_word'].iloc[i] != df[aug_method_name+'_clean'].iloc[i][df[aug_method_name+'_sub_start_idx'].iloc[i]:df[aug_method_name+'_sub_end_idx'].iloc[i]] or \
+                df['obj_word'].iloc[i] != df[aug_method_name+'_clean'].iloc[i][df[aug_method_name+'_obj_start_idx'].iloc[i]:df[aug_method_name+'_obj_end_idx'].iloc[i]]:
+                print('error: ', i, df['sentence'].iloc[i], df[aug_method_name+'_clean'].iloc[i], df['sub_word'].iloc[i], df['obj_word'].iloc[i], 
+                    df[aug_method_name+'_clean'].iloc[i][df[aug_method_name+'_sub_start_idx'].iloc[i]:df[aug_method_name+'_sub_end_idx'].iloc[i]],
+                    df[aug_method_name+'_clean'].iloc[i][df[aug_method_name+'_obj_start_idx'].iloc[i]:df[aug_method_name+'_obj_end_idx'].iloc[i]])
 
 
 # Augmentation
@@ -352,3 +362,118 @@ class augmentation():
             # 일단 안전하게 문장 맨 앞에 삽입해주자.
             return new_adverb + ' ' + sentence
 
+
+    # aeda
+    def aeda(self, sentence):
+        punc_list = list(".,;:?!")
+        
+        sentence = sentence.split()
+        random_ratio = random.uniform(0.1, 0.3) # 범위는 ADEA 논문을 따름.
+        n_ri = max(1, int(len(t) * random_ratio))
+        
+        for _ in range(n_ri):
+            random_punc = random.choice(punc_list)
+            random_idx = random.randint(0, len(sentence)-1)
+            sentence.insert(random_idx, random_punc)
+            
+        return ' '.join(sentence).strip()
+
+
+    # random_masking_replacement
+    def random_masking_replacement(sentence, mask_token, unmasker):
+        sentence = sentence.split()
+        sub_start_idx = sentence.index(sub_start_marker)
+        sub_end_idx = sentence.index(sub_end_marker)
+        obj_start_idx = sentence.index(obj_start_marker)
+        obj_end_idx = sentence.index(obj_end_marker)
+        
+        entity_indices = [sub_start_idx, sub_end_idx, obj_start_idx, obj_end_idx]
+        
+        random_idx = random.randint(0, len(sentence) - 4) # entity marker 4개.
+        
+        list_without_entity_marker = [(i, v) for i, v in enumerate(sentence) if i not in entity_indices]
+        
+        selected_token_idx, selected_token_value = list_without_entity_marker[random_idx-1]
+        sentence[selected_token_idx] = mask_token
+        
+        # 복원된 토큰을 mask 인덱스와 교대함.
+        unmask_result = unmasker(' '.join(sentence), skip_special_tokens=False)
+        
+        unmask_sentence = sentence
+        if re.findall('[가-힣]', unmask_result[0]['token_str']):
+            unmask_token = unmask_result[0]['token_str']
+            unmask_sentence[selected_token_idx] = unmask_token
+            
+        elif re.findall('[가-힣]', unmask_result[1]['token_str']):
+            unmask_token = unmask_result[1]['token_str']
+            unmask_sentence[selected_token_idx] = unmask_token
+            
+        elif re.findall('[가-힣]', unmask_result[2]['token_str']):
+            unmask_token = unmask_result[2]['token_str']
+            unmask_sentence[selected_token_idx] = unmask_token
+            
+        elif re.findall('[가-힣]', unmask_result[3]['token_str']):
+            unmask_token = unmask_result[3]['token_str']
+            unmask_sentence[selected_token_idx] = unmask_token
+            
+        elif re.findall('[가-힣]', unmask_result[4]['token_str']):
+            unmask_token = unmask_result[4]['token_str']
+            unmask_sentence[selected_token_idx] = unmask_token
+            
+        else:
+            unmask_token = unmask_result[0]['token_str']
+            unmask_sentence[selected_token_idx] = unmask_token
+            
+        unmask_sentence = ' '.join(unmask_sentence)
+        unmask_sentence = unmask_sentence.replace('  ', ' ')
+
+        return unmask_sentence.strip()
+
+
+    # random masking insertion
+    def random_masking_insertion(self, sentence, mask_token, unmasker):
+        original_sentence = sentence
+        sentence = sentence.split()
+        # random_ratio = random.uniform(0.1, 0.3)
+        # n_ri = max(1, int(len(sentence) * random_ratio))
+        # 한 문장에 하나의 mask token만 있어야 제대로된 복원이 가능함.
+
+        sub_eojeol_spt = re.findall('\w*\[S1\].+\[S2\]\w*', original_sentence)[0]
+        obj_eojeol_spt = re.findall('\w*\[S3\].+\[S4\]\w*', original_sentence)[0]
+        
+        sub_eojeol = re.sub('\[S1\]|\[S2\]', '', sub_eojeol_spt).strip() 
+        obj_eojeol = re.sub('\[S3\]|\[S4\]', '', obj_eojeol_spt).strip()
+        # print(sub_eojeol, obj_eojeol)
+
+        list_without_entity = sentence
+        list_without_entity_for_idx = [(i, v) for i, v in enumerate(list_without_entity) if i < min(list_without_entity.index('[S1]'), list_without_entity.index('[S3]')) 
+                                                                                                    or i > max(list_without_entity.index('[S2]'), list_without_entity.index('[S4]'))]
+        
+        random_idx = random.randint(0, len(sentence) - len(sub_eojeol_spt.split()) - len(obj_eojeol_spt.split()) - 1) # entity 어절을 빼야 함.
+        selected_token_idx, selected_token_value = list_without_entity_for_idx[random_idx-1]
+        sentence.insert(selected_token_idx, mask_token)
+
+        # replacement
+        unmask_result = unmasker(' '.join(sentence))
+
+        if re.findall('[가-힣]', unmask_result[0]['token_str']):
+            unmask_sentence = unmask_result[0]['sequence'].split()
+
+        elif re.findall('[가-힣]', unmask_result[1]['token_str']):
+            unmask_sentence = unmask_result[1]['sequence'].split()
+
+        elif re.findall('[가-힣]', unmask_result[2]['token_str']):
+            unmask_sentence = unmask_result[2]['sequence'].split()
+        elif re.findall('[가-힣]', unmask_result[3]['token_str']):
+            unmask_sentence = unmask_result[3]['sequence'].split()
+        elif re.findall('[가-힣]', unmask_result[4]['token_str']):
+            unmask_sentence = unmask_result[4]['sequence'].split()    
+        else:
+            unmask_sentence = unmask_result[0]['sequence'].split()
+
+        # entity 원상복구
+        unmask_sentence = ' '.join(unmask_sentence)
+        unmask_sentence = re.sub(sub_eojeol, sub_eojeol_spt, unmask_sentence)
+        unmask_sentence = re.sub(obj_eojeol, obj_eojeol_spt, unmask_sentence)
+
+        return unmask_sentence
