@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-from . import focal_loss
+from . import focal_loss, label_smoothing
 
 
 def L1_loss(output, target):
@@ -35,4 +35,8 @@ def CrossEntropyLoss(output, target):
 
 def Focal_loss(output, target, gamma):
     loss_func = focal_loss.FocalLoss(gamma=gamma)
+    return loss_func(output, target)
+
+def LabelSmoothing(output, target, smoothing):
+    loss_func = label_smoothing.LabelSmoothingLoss(smoothing=smoothing)
     return loss_func(output, target)

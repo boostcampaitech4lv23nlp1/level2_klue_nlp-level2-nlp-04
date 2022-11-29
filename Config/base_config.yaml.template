@@ -8,7 +8,8 @@ data:
   shuffle: True
   train_ratio: 0.1  # fit 과정에서의 train set 비율
   entity_marker_type: baseline # [baseline, typed_entity_marker, typed_entity_marker_punct]
-
+  use_preprocessing: True
+  
 model:
   model_name: monologg/koelectra-base-v3-discriminator
   class_id: 0
@@ -17,11 +18,13 @@ train:
   max_epoch: 1
   batch_size: 32
   lr: 1e-5
-  loss: focal # [ce, focal]
+  loss: focal # [ce, focal, labelsmoothing]
   focal_gamma: 2.0
+  smoothing: 0.05
   warm_up: 0
   use_freeze: False
   precision: 32 # defalue: 32
+  bin_loss_p: 0.2
   
 utils:
   seed: 42
