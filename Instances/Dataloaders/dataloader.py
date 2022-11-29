@@ -22,6 +22,7 @@ class Dataloader(pl.LightningDataModule):
         self.seed = conf.utils.seed  # seed
         self.entity_marker_type = conf.data.entity_marker_type  # 엔티티 위치 표현 유형
         self.use_preprocessing = conf.data.use_preprocessing  # preprocessing 적용 유무
+        self.add_question = conf.train.add_question # 문장 입력 형식 질문 적용
         self.model_class_id = conf.model.class_id
 
         self.train_path = conf.path.train_path  # train+dev data set 경로
@@ -101,14 +102,20 @@ class Dataloader(pl.LightningDataModule):
             # 텍스트 전처리 적용 유무
             if self.use_preprocessing:
                 sents.append(preprocessing.text_preprocessing(sent, self.tokenizer))
-                concat_entity.append(preprocessing.text_preprocessing(str(subj) + self.tokenizer.sep_token + str(obj), self.tokenizer))
+                if self.add_question:
+                    concat_entity.append(preprocessing.text_preprocessing(f"{str(subj)} {str(obj)} 관계?"))
+                else:
+                    concat_entity.append(preprocessing.text_preprocessing(str(subj) + self.tokenizer.sep_token + str(obj), self.tokenizer))
             else:
                 sents.append(sent)
-                concat_entity.append(str(subj) + self.tokenizer.sep_token + str(obj))
+                if self.add_question:
+                    concat_entity.append(f"{str(subj)} {str(obj)} 관계?")
+                else:
+                    concat_entity.append(str(subj) + self.tokenizer.sep_token + str(obj))
 
         tokenized_sentences = self.tokenizer(
-            concat_entity,
             sents,
+            concat_entity,
             return_tensors="pt",
             padding=True,
             truncation=True,
