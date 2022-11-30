@@ -421,8 +421,12 @@ class RBERT(pl.LightningModule):
 
     def configure_optimizers(self):
         optimizer = torch.optim.AdamW(self.parameters(), lr=self.lr)
-        scheduler = LambdaLR(optimizer=optimizer, lr_lambda=lambda step: min(1.0, float(step + 1) / (self.warm_up + 1)))
-        return [optimizer], [{"scheduler": scheduler, "interval": "step"}]
+        scheduler = transformers.get_cosine_schedule_with_warmup(
+            optimizer=optimizer,
+            num_warmup_steps=self.warm_up * self.trainer.estimated_stepping_batches,
+            num_training_steps=self.trainer.estimated_stepping_batches
+        )
+        return [optimizer], [{"scheduler": scheduler, "interval": "step", "frequency": 1}]
 
     def freeze(self):
         for name, param in self.plm.named_parameters():
