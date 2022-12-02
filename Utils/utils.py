@@ -1,4 +1,3 @@
-import os
 import Instances.Models.loss as loss
 import pytorch_lightning as pl
 from pytorch_lightning.callbacks import ModelCheckpoint
@@ -21,7 +20,7 @@ def best_save(save_path, top_k, monitor, mode, filename):
     return checkpoint_callback
 
 
-loss_dict = {"l1": loss.L1_loss, "mse": loss.MSE_loss, "bce": loss.BCEWithLogitsLoss, "rmse": loss.RMSE_loss, "huber": loss.HUBER_loss, "ce": loss.CrossEntropyLoss, "focal": loss.Focal_loss, "labelsmoothing":loss.LabelSmoothing}
+loss_dict = {"l1": loss.L1_loss, "mse": loss.MSE_loss, "bce": loss.BCEWithLogitsLoss, "rmse": loss.RMSE_loss, "huber": loss.HUBER_loss, "ce": loss.CrossEntropyLoss, "focal": loss.Focal_loss, "labelsmoothing": loss.LabelSmoothing}
 
 
 monitor_dict = {
