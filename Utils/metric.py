@@ -43,10 +43,7 @@ def klue_re_micro_f1(preds, labels):
     no_relation_label_idx = label_list.index("no_relation")
     label_indices = list(range(len(label_list)))
     label_indices.remove(no_relation_label_idx)
-    return (
-        sklearn.metrics.f1_score(labels, preds, average="micro", labels=label_indices)
-        * 100.0
-    )
+    return sklearn.metrics.f1_score(labels, preds, average="micro", labels=label_indices) * 100.0
 
 
 def klue_re_auprc(probs, labels):
@@ -58,27 +55,7 @@ def klue_re_auprc(probs, labels):
         targets_c = labels.take([c], axis=1).ravel()  # c에 대한 정답 레이블 확인 (열 요소 추출)
         if targets_c.sum() == 0:  # 해당하는 클래스가 하나도 없다면 skip
             continue
-        preds_c = probs.take(
-            [c], axis=1
-        ).ravel()  # c에 대한 확률(만약 logit이라면?) 레이블 확인 (열 요소 추출)
-        precision, recall, _ = sklearn.metrics.precision_recall_curve(
-            targets_c, preds_c
-        )  # 세번째 반환 값이 바로 임계값, logit의 범위에 따라 자동으로 반환해주는 듯
+        preds_c = probs.take([c], axis=1).ravel()  # c에 대한 확률(만약 logit이라면?) 레이블 확인 (열 요소 추출)
+        precision, recall, _ = sklearn.metrics.precision_recall_curve(targets_c, preds_c)  # 세번째 반환 값이 바로 임계값, logit의 범위에 따라 자동으로 반환해주는 듯
         score[c] = sklearn.metrics.auc(recall, precision)
     return np.average(score) * 100.0
-
-
-def compute_metrics(logits, labels):
-    """validation을 위한 metrics function"""
-
-    preds = logits.argmax(-1)  # 하나의 값
-    probs = logits  # 전체
-
-    # calculate accuracy using sklearn's function
-    f1 = klue_re_micro_f1(preds, labels)  # 하나의 값만 넣어줌
-    auprc = klue_re_auprc(probs, labels)  # 전체 값을 넣어줌
-
-    return {
-        "micro f1 score": f1,
-        "auprc": auprc,
-    }
