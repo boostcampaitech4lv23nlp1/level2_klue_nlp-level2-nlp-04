@@ -33,13 +33,7 @@ class Dataloader(pl.LightningDataModule):
         self.test_dataset = None
         self.predict_dataset = None
 
-        # https://huggingface.co/docs/transformers/main/en/model_doc/auto#transformers.AutoTokenizer
-        # deadlock에 걸리는 경우가 존재해서 use_fast를 False로 둠
         self.tokenizer = transformers.AutoTokenizer.from_pretrained(self.model_name)
-        # self.tokenizer = transformers.AutoTokenizer.from_pretrained("JunHyung1206/sajo_klue_roberta_large")
-
-        # https://www.youtube.com/watch?v=7q5NyFT8REg
-        # https://huggingface.co/course/chapter3/2?fw=pt
         self.data_collator = transformers.DataCollatorWithPadding(self.tokenizer)  # 다이나믹 패딩 유튜브 -> 잘안되는거 같음 (train 237로만 잘르고 dev 241)
 
         tokens = []  # 추가할 토큰들 지정 ex) "" 토큰
@@ -119,7 +113,6 @@ class Dataloader(pl.LightningDataModule):
                 tokenized_sentences["e1_mask"], tokenized_sentences["e2_mask"] = get_entity_position_embedding(self.tokenizer, entity_marker_type, self.tokenizer.additional_special_tokens, tokenized_sentences["input_ids"])
         return tokenized_sentences
 
-    # predict 빼고 전부 동일한 전처리
     def preprocessing(self, dataframe):  # 전체 전처리 과정을 모두 거쳐서 dataset input 형태로 구성할 수 있도록 하고 predict일 땐 빈 배열 반환
         """처음 불러온 csv 파일을 원하는 형태의 DataFrame으로 변경 시켜줍니다."""
         subj_df = dataframe["subject_entity"].apply(lambda x: pd.Series(literal_eval(x))).add_prefix("subj_")
@@ -130,8 +123,6 @@ class Dataloader(pl.LightningDataModule):
         all_dataset = dataframe[["id", "sentence", "label"]]
         all_dataset.reset_index(drop=True, inplace=True)
         preprocessing_dataframe = pd.concat([all_dataset, subj_df, obj_df], axis=1)
-
-        # 현재 train_dataset = load_data("../dataset/train/train.csv")까지 거친 상태
 
         if type(preprocessing_dataframe["label"].values[0]) == str:  # train, dev, test
             labels = labels_ids.label_to_num(preprocessing_dataframe["label"].values)  # labels를 붙여줍니다
@@ -149,18 +140,16 @@ class Dataloader(pl.LightningDataModule):
                 train_data = total_data.loc[train_idx]
                 val_data = total_data.loc[val_idx]
 
-            # train_data = total_data.sample(frac=self.train_ratio)  # csv 파일을 불러서 train과 dev로 나눕니다, 기본 baseline의 load_data 과정
             train_inputs, train_labels = self.preprocessing(train_data)
             self.train_dataset = RE_Dataset(train_inputs, train_labels)
 
-            # val_data = total_data.drop(train_data.index)  # dev
             val_inputs, val_labels = self.preprocessing(val_data)
             self.val_dataset = RE_Dataset(val_inputs, val_labels)
 
             print("train data len : ", len(train_labels))
             print("valid data len : ", len(val_labels))
 
-        else:  # inference 완성 오늘 할 애정
+        else:
             test_data = pd.read_csv(self.test_path)
             test_inputs, test_labels = self.preprocessing(test_data)
             self.test_dataset = RE_Dataset(test_inputs, test_labels)
@@ -191,5 +180,5 @@ class Dataloader(pl.LightningDataModule):
             collate_fn=self.data_collator,
         )
 
-    def new_vocab_size(self):  # 임베딩 사이즈를 맞춰줘야함 -> 5개추가 원래의 vocab + 5
+    def new_vocab_size(self):
         return self.new_token_count + self.new_special_token_count + self.tokenizer.vocab_size  # 새로운 vocab 사이즈를 반환합니다
