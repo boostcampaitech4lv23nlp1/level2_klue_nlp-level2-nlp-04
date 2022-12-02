@@ -20,7 +20,7 @@ train:
   lr: 1e-5   # 8.473169775897737e-06
   loss: ce # [ce, focal, labelsmoothing]
   focal_gamma: 2.0
-  smoothing: 0.05
+  epsilon: 0.05
   warm_up: 0
   use_freeze: False
   precision: 32 # defalue: 32
