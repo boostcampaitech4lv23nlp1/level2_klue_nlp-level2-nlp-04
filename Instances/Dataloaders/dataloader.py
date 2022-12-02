@@ -34,7 +34,7 @@ class Dataloader(pl.LightningDataModule):
         self.predict_dataset = None
 
         self.tokenizer = transformers.AutoTokenizer.from_pretrained(self.model_name)
-        self.data_collator = transformers.DataCollatorWithPadding(self.tokenizer)  # 다이나믹 패딩 유튜브 -> 잘안되는거 같음 (train 237로만 잘르고 dev 241)
+        self.data_collator = transformers.DataCollatorWithPadding(self.tokenizer)  # 다이나믹 패딩
 
         tokens = []  # 추가할 토큰들 지정 ex) "" 토큰
 

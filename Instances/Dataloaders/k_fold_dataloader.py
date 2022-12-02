@@ -39,14 +39,8 @@ class KFoldDataloader(pl.LightningDataModule):
         self.test_dataset = None
         self.predict_dataset = None
 
-        # https://huggingface.co/docs/transformers/main/en/model_doc/auto#transformers.AutoTokenizer
-        # deadlock에 걸리는 경우가 존재해서 use_fast를 False로 둠
         self.tokenizer = transformers.AutoTokenizer.from_pretrained(self.model_name)
-        # self.tokenizer = transformers.AutoTokenizer.from_pretrained("JunHyung1206/sajo_klue_roberta_large")
-
-        # https://www.youtube.com/watch?v=7q5NyFT8REg
-        # https://huggingface.co/course/chapter3/2?fw=pt
-        self.data_collator = transformers.DataCollatorWithPadding(self.tokenizer)  # 다이나믹 패딩 유튜브 -> 잘안되는거 같음 (train 237로만 잘르고 dev 241)
+        self.data_collator = transformers.DataCollatorWithPadding(self.tokenizer)  # 다이나믹 패딩
 
         tokens = []  # 추가할 토큰들 지정 ex) "" 토큰
 
@@ -138,8 +132,6 @@ class KFoldDataloader(pl.LightningDataModule):
         all_dataset.reset_index(drop=True, inplace=True)
         preprocessing_dataframe = pd.concat([all_dataset, subj_df, obj_df], axis=1)
 
-        # 현재 train_dataset = load_data("../dataset/train/train.csv")까지 거친 상태
-
         if type(preprocessing_dataframe["label"].values[0]) == str:  # train, dev, test
             labels = labels_ids.label_to_num(preprocessing_dataframe["label"].values)  # labels를 붙여줍니다
         else:  # predict
@@ -203,5 +195,5 @@ class KFoldDataloader(pl.LightningDataModule):
             collate_fn=self.data_collator,
         )
 
-    def new_vocab_size(self):  # 임베딩 사이즈를 맞춰줘야함 -> 5개추가 원래의 vocab + 5
+    def new_vocab_size(self):
         return self.new_token_count + self.new_special_token_count + self.tokenizer.vocab_size  # 새로운 vocab 사이즈를 반환합니다
