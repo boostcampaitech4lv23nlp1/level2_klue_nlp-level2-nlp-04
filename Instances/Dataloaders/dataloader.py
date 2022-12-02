@@ -98,7 +98,6 @@ class Dataloader(pl.LightningDataModule):
             else:
                 sent = sent[:obj_start] + temp_obj + sent[obj_end + 1 : subj_start] + temp_subj + sent[subj_end + 1 :]
 
-            # 텍스트 전처리 적용 유무
             if self.use_preprocessing:
                 sents.append(preprocessing.text_preprocessing(sent, self.tokenizer))
                 concat_entity.append(preprocessing.text_preprocessing(str(subj) + self.tokenizer.sep_token + str(obj), self.tokenizer))
@@ -107,8 +106,8 @@ class Dataloader(pl.LightningDataModule):
                 concat_entity.append(str(subj) + self.tokenizer.sep_token + str(obj))
 
         tokenized_sentences = self.tokenizer(
-            concat_entity,
             sents,
+            concat_entity,
             return_tensors="pt",
             padding=True,
             truncation=True,

@@ -31,7 +31,7 @@ class Model(pl.LightningModule):
         # print(self.plm)
         self.loss_name = conf.train.loss
         self.focal_gamma = conf.train.focal_gamma
-        self.smoothing = conf.train.smoothing
+        self.epsilon = conf.train.epsilon
 
         self.loss_func = utils.loss_dict[conf.train.loss]
         self.use_freeze = conf.train.use_freeze
@@ -51,8 +51,8 @@ class Model(pl.LightningModule):
         logits = self(items)
         if self.loss_name == "focal":
             loss = self.loss_func(logits, items["labels"].long(), self.focal_gamma)
-        elif self.loss_name == 'labelsmoothing':
-            loss = self.loss_func(logits, items["labels"].long(), self.smoothing)
+        elif self.loss_name == "labelsmoothing":
+            loss = self.loss_func(logits, items["labels"].long(), self.epsilon)
         else:
             loss = self.loss_func(logits, items["labels"].long())
         self.log("train_loss", loss)
@@ -65,8 +65,8 @@ class Model(pl.LightningModule):
         logits = self(items)
         if self.loss_name == "focal":
             loss = self.loss_func(logits, items["labels"].long(), self.focal_gamma)
-        elif self.loss_name == 'labelsmoothing':
-            loss = self.loss_func(logits, items["labels"].long(), self.smoothing)
+        elif self.loss_name == "labelsmoothing":
+            loss = self.loss_func(logits, items["labels"].long(), self.epsilon)
         else:
             loss = self.loss_func(logits, items["labels"].long())
 
@@ -150,7 +150,7 @@ class BaseModel(pl.LightningModule):
 
         self.loss_name = conf.train.loss
         self.focal_gamma = conf.train.focal_gamma
-        self.smoothing = conf.train.smoothing
+        self.epsilon = conf.train.epsilon
 
         self.loss_func = utils.loss_dict[conf.train.loss]
         self.use_freeze = conf.train.use_freeze
@@ -178,8 +178,8 @@ class BaseModel(pl.LightningModule):
         logits = self(items)
         if self.loss_name == "focal":
             loss = self.loss_func(logits, items["labels"].long(), self.focal_gamma)
-        elif self.loss_name == 'labelsmoothing':
-            loss = self.loss_func(logits, items["labels"].long(), self.smoothing)
+        elif self.loss_name == "labelsmoothing":
+            loss = self.loss_func(logits, items["labels"].long(), self.epsilon)
         else:
             loss = self.loss_func(logits, items["labels"].long())
 
@@ -193,8 +193,8 @@ class BaseModel(pl.LightningModule):
         logits = self(items)
         if self.loss_name == "focal":
             loss = self.loss_func(logits, items["labels"].long(), self.focal_gamma)
-        elif self.loss_name == 'labelsmoothing':
-            loss = self.loss_func(logits, items["labels"].long(), self.smoothing)
+        elif self.loss_name == "labelsmoothing":
+            loss = self.loss_func(logits, items["labels"].long(), self.epsilon)
         else:
             loss = self.loss_func(logits, items["labels"].long())
 
@@ -319,7 +319,7 @@ class RBERT(pl.LightningModule):
 
         self.loss_name = conf.train.loss
         self.focal_gamma = conf.train.focal_gamma
-        self.smoothing = conf.train.smoothing
+        self.epsilon = conf.train.epsilon
 
         self.loss_func = utils.loss_dict[conf.train.loss]
         self.use_freeze = conf.train.use_freeze
@@ -367,8 +367,8 @@ class RBERT(pl.LightningModule):
         logits = self(items)
         if self.loss_name == "focal":
             loss = self.loss_func(logits, items["labels"].long(), self.focal_gamma)
-        elif self.loss_name == 'labelsmoothing':
-            loss = self.loss_func(logits, items["labels"].long(), self.smoothing)
+        elif self.loss_name == "labelsmoothing":
+            loss = self.loss_func(logits, items["labels"].long(), self.epsilon)
         else:
             loss = self.loss_func(logits, items["labels"].long())
         self.log("train_loss", loss)
@@ -379,8 +379,8 @@ class RBERT(pl.LightningModule):
         logits = self(items)
         if self.loss_name == "focal":
             loss = self.loss_func(logits, items["labels"].long(), self.focal_gamma)
-        elif self.loss_name == 'labelsmoothing':
-            loss = self.loss_func(logits, items["labels"].long(), self.smoothing)
+        elif self.loss_name == "labelsmoothing":
+            loss = self.loss_func(logits, items["labels"].long(), self.epsilon)
         else:
             loss = self.loss_func(logits, items["labels"].long())
         pred = logits.argmax(-1)
@@ -421,8 +421,13 @@ class RBERT(pl.LightningModule):
 
     def configure_optimizers(self):
         optimizer = torch.optim.AdamW(self.parameters(), lr=self.lr)
-        scheduler = LambdaLR(optimizer=optimizer, lr_lambda=lambda step: min(1.0, float(step + 1) / (self.warm_up + 1)))
-        return [optimizer], [{"scheduler": scheduler, "interval": "step"}]
+
+        scheduler = transformers.get_cosine_schedule_with_warmup(
+            optimizer=optimizer,
+            num_warmup_steps=self.warm_up * self.trainer.estimated_stepping_batches,
+            num_training_steps=self.trainer.estimated_stepping_batches
+        )
+        return [optimizer], [{"scheduler": scheduler, "interval": "step", "frequency": 1}]
 
     def freeze(self):
         for name, param in self.plm.named_parameters():
@@ -456,6 +461,7 @@ class RBERTWithLSTM(pl.LightningModule):
 
         self.loss_name = conf.train.loss
         self.focal_gamma = conf.train.focal_gamma
+        self.epsilon = conf.train.epsilon
 
         self.loss_func = utils.loss_dict[conf.train.loss]
         self.use_freeze = conf.train.use_freeze
@@ -507,6 +513,8 @@ class RBERTWithLSTM(pl.LightningModule):
         logits = self(items)
         if self.loss_name == "focal":
             loss = self.loss_func(logits, items["labels"].long(), self.focal_gamma)
+        elif self.loss_name == "labelsmoothing":
+            loss = self.loss_func(logits, items["labels"].long(), self.epsilon)
         else:
             loss = self.loss_func(logits, items["labels"].long())
         self.log("train_loss", loss)
@@ -517,6 +525,8 @@ class RBERTWithLSTM(pl.LightningModule):
         logits = self(items)
         if self.loss_name == "focal":
             loss = self.loss_func(logits, items["labels"].long(), self.focal_gamma)
+        elif self.loss_name == "labelsmoothing":
+            loss = self.loss_func(logits, items["labels"].long(), self.epsilon)
         else:
             loss = self.loss_func(logits, items["labels"].long())
         pred = logits.argmax(-1)
@@ -648,3 +658,53 @@ class BinaryLoss(BaseModel):
         logits, _ = self(items)
 
         return logits.squeeze()
+
+
+class BaseModelWithPooling(BaseModel):
+
+    def __init__(self, conf, new_vocab_size):
+        super().__init__(conf, new_vocab_size)
+
+        self.pooling_type = conf.train.pooling_type
+
+        if self.pooling_type == 'mean_max':
+            self.classifier2 = nn.Sequential(
+                nn.Dropout(0.1),
+                nn.Linear(self.input_dim * 2, self.num_labels),
+            )
+
+    def forward(self, items):  ## **items
+        x = self.plm(input_ids=items["input_ids"], attention_mask=items["attention_mask"], token_type_ids=items["token_type_ids"])[0] # pooler까지 거친 최종적인 output입니다
+
+        attention_mask = items['attention_mask']
+        input_mask_expanded = attention_mask.unsqueeze(-1).expand(x.size()).float()
+
+        if self.pooling_type == 'max':
+            
+            x[input_mask_expanded == 0] = -1e9  # Set padding tokens to large negative value
+            x = torch.max(x, 1)[0]
+
+        elif self.pooling_type == 'mean':
+            x = torch.sum(x * input_mask_expanded, 1)
+
+            sum_mask = input_mask_expanded.sum(1)
+            sum_mask = torch.clamp(sum_mask, min=1e-9)
+
+            x = x / sum_mask
+
+        elif self.pooling_type == 'mean_max':
+            mean_pooling_embeddings = torch.mean(x, 1)
+            _, max_pooling_embeddings = torch.max(x, 1)
+            x = torch.cat((mean_pooling_embeddings, max_pooling_embeddings), 1)
+
+        else:
+            x = x[:,0,:]
+
+        
+        if self.pooling_type == 'mean_max':
+            x = self.classifier2(x)
+        else:
+            x = self.classifier(x)  # 분류기를 거칩니다
+        
+        return x
+    

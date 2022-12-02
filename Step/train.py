@@ -1,6 +1,7 @@
 from pytorch_lightning.loggers import WandbLogger
 
 import pytorch_lightning as pl
+from pytorch_lightning.callbacks import LearningRateMonitor
 import Instances.instance as instance
 import wandb
 
@@ -14,6 +15,7 @@ def train(args, conf):
     wandb_logger = WandbLogger(project=project_name)
 
     save_path = f"{conf.path.save_path}{conf.model.model_name}_{wandb_logger.experiment.name}/"
+    lr_monitor = LearningRateMonitor(logging_interval='step')  
 
     trainer = pl.Trainer(
         accelerator="gpu",
@@ -35,6 +37,7 @@ def train(args, conf):
                 mode=utils.monitor_dict[conf.utils.best_save_monitor]["mode"],
                 filename="{epoch}-{val_micro_f1}",
             ),
+            lr_monitor
         ],
     )
     trainer.fit(model=model, datamodule=dataloader)

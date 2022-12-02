@@ -37,6 +37,6 @@ def Focal_loss(output, target, gamma):
     loss_func = focal_loss.FocalLoss(gamma=gamma)
     return loss_func(output, target)
 
-def LabelSmoothing(output, target, smoothing):
-    loss_func = label_smoothing.LabelSmoothingLoss(smoothing=smoothing)
+def LabelSmoothing(output, target, epsilon):
+    loss_func = label_smoothing.CrossEntropywithLabelSmoothing(epsilon=epsilon)
     return loss_func(output, target)
