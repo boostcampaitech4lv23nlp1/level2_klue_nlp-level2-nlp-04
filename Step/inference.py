@@ -25,8 +25,6 @@ def inference(args, conf):
         datamodule=dataloader,
     )
 
-    # 저번 베이스라인 코드와 이번 베이스라인 코드 결합
-
     predictions = list(i for i in torch.cat(predictions))  # logits들의 배열
 
     output_pred = [np.argmax(logit, axis=-1).item() for logit in predictions]
@@ -47,9 +45,6 @@ def inference(args, conf):
     dir_path = "./prediction"
     if not os.path.exists(dir_path):
         os.mkdir(dir_path)
-
-    # print(args.saved_model)  ex) SaveModels/klue/roberta-base_usual-dust-1/epoch=0-val_micro_f1=76.8685077273879.ckpt 인 경우
-    # usual-dust-1_epoch=0 로 들어감
 
     key = "_".join([args.saved_model.split("/")[-2].split("_")[1], args.saved_model.split("/")[-1].split("-")[0]])
     output.to_csv(f"./prediction/submission_{key}.csv", index=False)  # 최종적으로 완성된 예측한 라벨 csv 파일 형태로 저장.

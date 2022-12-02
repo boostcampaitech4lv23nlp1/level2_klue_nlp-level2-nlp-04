@@ -41,8 +41,8 @@ def soft_vote_ensemble(file_list, weight=None):
     pred_answer = labels_ids.num_to_label(average_pred)
 
     average_prob = [list(i) for i in average_prob]  # 리스트 형태로 변환
-    # output 만들고 저장하기
 
+    # output 만들고 저장하기
     predict_id = range(len(probs))  # id
     output = pd.DataFrame(
         {
@@ -60,11 +60,7 @@ def soft_vote_ensemble(file_list, weight=None):
     output.to_csv(f"./prediction/submission_ensemble.csv", index=False)  # 최종적으로 완성된 예측한 라벨 csv 파일 형태로 저장
 
 
-file_list = []  # .csv파일을 제외한 이름을 넣어주시면 됩니다
-# ex
-# file_list = ["submission_base_config_3_fold", "submission_dutiful-shadow-26_epoch=4", "submission_magic-glitter-17_epoch=3"]
-
+file_list = []  # .csv파일을 제외한 이름을 입력합니다
 
 # 가중치가 있다면 가중평균을 없다면 산술평균을 구합니다. 가중치의 합이 1이 아니라면 합으로 나눠 합이 1로 다시 재조정 됩니다
 soft_vote_ensemble(file_list=file_list)
-# soft_vote_ensemble(file_list=file_list, weight=[0.5, 0.25, 0.25])

@@ -12,17 +12,11 @@ def sweep(args, conf, exp_count):
 
     sweep_config = {
         "method": "bayes",
-        # "method": "grid",
         "parameters": {"lr": {"distribution": "uniform", "min": 5e-6, "max": 1e-5}},
         "metric": {
             "name": "test_micro_f1",
             "goal": "maximize",
-        },  # test_micro_f1이 최대화 되는 방향으로 학습합니다
-        # "early_terminate": {
-        #     "type": "hyperband",
-        #     "max_iter": 30,  # hyperband 공부 필요
-        #     "s": 2,
-        # },
+        },
     }
 
     def sweep_train(config=None):
@@ -69,4 +63,4 @@ def sweep(args, conf, exp_count):
         project=project_name,
     )
 
-    wandb.agent(sweep_id=sweep_id, function=sweep_train)  # ,   count=exp_count)
+    wandb.agent(sweep_id=sweep_id, function=sweep_train, count=exp_count)
