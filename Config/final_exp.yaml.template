@@ -1,0 +1,43 @@
+path:
+  train_path: ./dataset/train/train_mr_mi_ht_aeda_augmentation.csv
+  test_path: ./dataset/train/test.csv
+  predict_path: ./dataset/test/test_data.csv
+  save_path: SaveModels/
+
+data:
+  shuffle: True
+  train_ratio: 0.85  # fit 과정에서의 train set 비율
+  entity_marker_type: typed_entity_marker # [baseline, typed_entity_marker, typed_entity_marker_punct]
+  use_preprocessing: True
+
+model:
+  model_name: klue/roberta-large
+  class_id: 3
+
+train:
+  max_epoch: 5
+  batch_size: 32
+  lr: 1e-5   # 8.473169775897737e-06
+  loss: ce # [ce, focal, labelsmoothing]
+  focal_gamma: 2.0
+  epsilon: 0.05
+  warm_up: 0
+  use_freeze: False
+  precision: 32 # defalue: 32
+  bin_loss_p: 0.2
+
+utils:
+  seed: 42
+  early_stop_monitor: val_loss # early
+  best_save_monitor: val_micro_f1 # best
+  patience: 25 # early stop
+  top_k: 2 # best save
+
+k_fold:
+  use_k_fold: False
+  num_folds: 3 # nums_folds는 fold의 개수
+  
+wandb:
+  project: final
+
+# 개인적인 tip으론 yaml 파일명에 해당 설정을 통해 얻은 성능을 함께 기록해두면 나중에 앙상블할 모델을 찾거나 재현할 때 편합니다
