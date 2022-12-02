@@ -23,12 +23,9 @@ class Model(pl.LightningModule):
         self.model_config.num_labels = 30
         self.plm = transformers.AutoModelForSequenceClassification.from_pretrained(self.model_name, config=self.model_config)
         self.warm_up = conf.train.warm_up
-        ## print문 주석 해제해서 임베딩 차원이 어떻게 바뀌는지 한번 확인해보세요
-        # print(self.plm)
 
-        self.plm.resize_token_embeddings(new_vocab_size)  # vocab 사이즈 조정 (새로운 토큰 추가에 의함)
+        self.plm.resize_token_embeddings(new_vocab_size)  # 임베딩 사이즈 조정
 
-        # print(self.plm)
         self.loss_name = conf.train.loss
         self.focal_gamma = conf.train.focal_gamma
         self.epsilon = conf.train.epsilon
@@ -39,10 +36,10 @@ class Model(pl.LightningModule):
         if self.use_freeze:
             self.freeze()
 
-    def forward(self, items):  ## **items
+    def forward(self, items):
         x = self.plm(input_ids=items["input_ids"], attention_mask=items["attention_mask"], token_type_ids=items["token_type_ids"],)[
             "logits"
-        ]  # cls -> classifier 한 결과를 뱉음
+        ]  # cls
         return x
 
     def training_step(self, batch, batch_idx):
@@ -111,10 +108,8 @@ class Model(pl.LightningModule):
 
         return logits.squeeze()
 
-    ## Warm-up 단계 밑의 링크 참고하여 작성
-    ## https://pytorch-lightning.readthedocs.io/en/stable/common/optimization.html
     def configure_optimizers(self):
-        optimizer = torch.optim.AdamW(self.parameters(), lr=self.lr)  # 추후에 알려드릴 예정
+        optimizer = torch.optim.AdamW(self.parameters(), lr=self.lr)
         scheduler = LambdaLR(
             optimizer=optimizer,
             lr_lambda=lambda step: min(1.0, float(step + 1) / (self.warm_up + 1)),
@@ -143,10 +138,7 @@ class BaseModel(pl.LightningModule):
         self.plm = transformers.AutoModel.from_pretrained(self.model_name)
         self.warm_up = conf.train.warm_up
 
-        ## print문 주석 해제해서 임베딩 차원이 어떻게 바뀌는지 한번 확인해보세요
-        # print(self.plm)
-
-        self.plm.resize_token_embeddings(new_vocab_size)  # vocab 사이즈 조정 (새로운 토큰 추가에 의함)
+        self.plm.resize_token_embeddings(new_vocab_size)  # 임베딩 사이즈 조정
 
         self.loss_name = conf.train.loss
         self.focal_gamma = conf.train.focal_gamma
@@ -164,7 +156,7 @@ class BaseModel(pl.LightningModule):
             nn.Linear(self.input_dim, self.num_labels),
         )
 
-    def forward(self, items):  ## **items
+    def forward(self, items):
         x = self.plm(input_ids=items["input_ids"], attention_mask=items["attention_mask"], token_type_ids=items["token_type_ids"],)[
             0
         ]  # pooler까지 거친 최종적인 output입니다
@@ -239,8 +231,6 @@ class BaseModel(pl.LightningModule):
 
         return logits.squeeze()
 
-    ## Warm-up 단계 밑의 링크 참고하여 작성
-    ## https://pytorch-lightning.readthedocs.io/en/stable/common/optimization.html
     def configure_optimizers(self):
         optimizer = torch.optim.AdamW(self.parameters(), lr=self.lr)  # 추후에 알려드릴 예정
         scheduler = LambdaLR(
@@ -256,9 +246,6 @@ class BaseModel(pl.LightningModule):
                 param.requires_grad = False
 
 
-# 상속을 받으면 기존에 구현되어 있는 코드를 재활용할 수 있습니다
-# 상속받은 자식클래스에 classifier가 없다면 부모클래스에 있던 classifier가 print 할때는 나오지만 forward 과정에서는 사용되지 않습니다
-# 이렇게 안하시고 복붙하셔도 상관없습니다
 class ModelWithConcat(BaseModel):
     def __init__(self, conf, new_vocab_size):
         super().__init__(conf, new_vocab_size)
@@ -422,11 +409,7 @@ class RBERT(pl.LightningModule):
     def configure_optimizers(self):
         optimizer = torch.optim.AdamW(self.parameters(), lr=self.lr)
 
-        scheduler = transformers.get_cosine_schedule_with_warmup(
-            optimizer=optimizer,
-            num_warmup_steps=self.warm_up * self.trainer.estimated_stepping_batches,
-            num_training_steps=self.trainer.estimated_stepping_batches
-        )
+        scheduler = transformers.get_cosine_schedule_with_warmup(optimizer=optimizer, num_warmup_steps=self.warm_up * self.trainer.estimated_stepping_batches, num_training_steps=self.trainer.estimated_stepping_batches)
         return [optimizer], [{"scheduler": scheduler, "interval": "step", "frequency": 1}]
 
     def freeze(self):
@@ -584,7 +567,7 @@ class ModelWithLSTM(BaseModel):
         self.lstm = nn.LSTM(input_size=self.model_config.hidden_size, hidden_size=self.model_config.hidden_size, num_layers=2, dropout=0.2, batch_first=True, bidirectional=True)
         self.fc = nn.Linear(self.model_config.hidden_size * 2, self.model_config.num_labels)
 
-    def forward(self, items):  ## **items
+    def forward(self, items):
         output = self.plm(input_ids=items["input_ids"], attention_mask=items["attention_mask"], token_type_ids=items["token_type_ids"],)[
             0
         ]  # 최종적인 output입니다
@@ -609,7 +592,7 @@ class BinaryLoss(BaseModel):
 
         self.p = conf.train.bin_loss_p
 
-    def forward(self, items):  ## **items
+    def forward(self, items):
         x = self.plm(input_ids=items["input_ids"], attention_mask=items["attention_mask"], token_type_ids=items["token_type_ids"],)[
             0
         ]  # 최종적인 output입니다
@@ -661,30 +644,29 @@ class BinaryLoss(BaseModel):
 
 
 class BaseModelWithPooling(BaseModel):
-
     def __init__(self, conf, new_vocab_size):
         super().__init__(conf, new_vocab_size)
 
         self.pooling_type = conf.train.pooling_type
 
-        if self.pooling_type == 'mean_max':
+        if self.pooling_type == "mean_max":
             self.classifier2 = nn.Sequential(
                 nn.Dropout(0.1),
                 nn.Linear(self.input_dim * 2, self.num_labels),
             )
 
     def forward(self, items):  ## **items
-        x = self.plm(input_ids=items["input_ids"], attention_mask=items["attention_mask"], token_type_ids=items["token_type_ids"])[0] # pooler까지 거친 최종적인 output입니다
+        x = self.plm(input_ids=items["input_ids"], attention_mask=items["attention_mask"], token_type_ids=items["token_type_ids"])[0]  # pooler까지 거친 최종적인 output입니다
 
-        attention_mask = items['attention_mask']
+        attention_mask = items["attention_mask"]
         input_mask_expanded = attention_mask.unsqueeze(-1).expand(x.size()).float()
 
-        if self.pooling_type == 'max':
-            
+        if self.pooling_type == "max":
+
             x[input_mask_expanded == 0] = -1e9  # Set padding tokens to large negative value
             x = torch.max(x, 1)[0]
 
-        elif self.pooling_type == 'mean':
+        elif self.pooling_type == "mean":
             x = torch.sum(x * input_mask_expanded, 1)
 
             sum_mask = input_mask_expanded.sum(1)
@@ -692,19 +674,17 @@ class BaseModelWithPooling(BaseModel):
 
             x = x / sum_mask
 
-        elif self.pooling_type == 'mean_max':
+        elif self.pooling_type == "mean_max":
             mean_pooling_embeddings = torch.mean(x, 1)
             _, max_pooling_embeddings = torch.max(x, 1)
             x = torch.cat((mean_pooling_embeddings, max_pooling_embeddings), 1)
 
         else:
-            x = x[:,0,:]
+            x = x[:, 0, :]
 
-        
-        if self.pooling_type == 'mean_max':
+        if self.pooling_type == "mean_max":
             x = self.classifier2(x)
         else:
             x = self.classifier(x)  # 분류기를 거칩니다
-        
+
         return x
-    
