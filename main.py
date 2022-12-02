@@ -11,7 +11,7 @@ from Step import train, inference, sweep, analysis
 def init():  # args : 실행시 입력하는 인자, conf : yaml 파일에 저장된 하이퍼파라미터
     parser = argparse.ArgumentParser()
     parser.add_argument("--mode", "-m", required=True)
-    parser.add_argument("--config", "-c", type=str, default="base_config")
+    parser.add_argument("--config", "-c", type=str, default="final_exp")
 
     parser.add_argument(
         "--saved_model",

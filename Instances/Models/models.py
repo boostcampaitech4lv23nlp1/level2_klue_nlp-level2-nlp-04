@@ -51,7 +51,7 @@ class Model(pl.LightningModule):
         logits = self(items)
         if self.loss_name == "focal":
             loss = self.loss_func(logits, items["labels"].long(), self.focal_gamma)
-        elif self.loss_name == 'labelsmoothing':
+        elif self.loss_name == "labelsmoothing":
             loss = self.loss_func(logits, items["labels"].long(), self.smoothing)
         else:
             loss = self.loss_func(logits, items["labels"].long())
@@ -65,7 +65,7 @@ class Model(pl.LightningModule):
         logits = self(items)
         if self.loss_name == "focal":
             loss = self.loss_func(logits, items["labels"].long(), self.focal_gamma)
-        elif self.loss_name == 'labelsmoothing':
+        elif self.loss_name == "labelsmoothing":
             loss = self.loss_func(logits, items["labels"].long(), self.smoothing)
         else:
             loss = self.loss_func(logits, items["labels"].long())
@@ -178,7 +178,7 @@ class BaseModel(pl.LightningModule):
         logits = self(items)
         if self.loss_name == "focal":
             loss = self.loss_func(logits, items["labels"].long(), self.focal_gamma)
-        elif self.loss_name == 'labelsmoothing':
+        elif self.loss_name == "labelsmoothing":
             loss = self.loss_func(logits, items["labels"].long(), self.smoothing)
         else:
             loss = self.loss_func(logits, items["labels"].long())
@@ -193,7 +193,7 @@ class BaseModel(pl.LightningModule):
         logits = self(items)
         if self.loss_name == "focal":
             loss = self.loss_func(logits, items["labels"].long(), self.focal_gamma)
-        elif self.loss_name == 'labelsmoothing':
+        elif self.loss_name == "labelsmoothing":
             loss = self.loss_func(logits, items["labels"].long(), self.smoothing)
         else:
             loss = self.loss_func(logits, items["labels"].long())
@@ -367,7 +367,7 @@ class RBERT(pl.LightningModule):
         logits = self(items)
         if self.loss_name == "focal":
             loss = self.loss_func(logits, items["labels"].long(), self.focal_gamma)
-        elif self.loss_name == 'labelsmoothing':
+        elif self.loss_name == "labelsmoothing":
             loss = self.loss_func(logits, items["labels"].long(), self.smoothing)
         else:
             loss = self.loss_func(logits, items["labels"].long())
@@ -379,7 +379,7 @@ class RBERT(pl.LightningModule):
         logits = self(items)
         if self.loss_name == "focal":
             loss = self.loss_func(logits, items["labels"].long(), self.focal_gamma)
-        elif self.loss_name == 'labelsmoothing':
+        elif self.loss_name == "labelsmoothing":
             loss = self.loss_func(logits, items["labels"].long(), self.smoothing)
         else:
             loss = self.loss_func(logits, items["labels"].long())
@@ -421,6 +421,7 @@ class RBERT(pl.LightningModule):
 
     def configure_optimizers(self):
         optimizer = torch.optim.AdamW(self.parameters(), lr=self.lr)
+
         scheduler = transformers.get_cosine_schedule_with_warmup(
             optimizer=optimizer,
             num_warmup_steps=self.warm_up * self.trainer.estimated_stepping_batches,
