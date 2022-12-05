@@ -35,9 +35,14 @@
     - label : label 정보, 총 30개 classes로 분류
     - sourec : 샘플의 출처이며 policy_briefing / wikipedia / wikitree로 구성
 
-| 🌱 김해원 | 🌱 김혜빈 | 🌱 박준형 | 🌱 양봉석 | 🌱 이예령 |
-| :--- | :--- | :--- | :--- | :--- |
-| • 리서치 (Entity Marker, R-BERT) <br/> • 모델링 (Entity Marker, R-BERT) <br/> • Input data 형태 실험 <br/> • Label smoothing | • 코드 리뷰 <br/> • 데이터 불균형 문제 리서치 <br/> • 모델링 실험 <br/> • Focal Loss 적용 | • PM <br/> • 베이스라인 구축  <br/>  • 리서치 (AFL) <br/> | • EDA <br/> • 데이터 증강 <br/> • Under Sampling <br/> • LR scheduler | • 리서치 (ERACL) <br/> • 모델링 (Binary Loss, Pooling Layer) <br/> • 에러 분석 구현 (Confusion Matrix) |
+| 이름 | 역할 |
+| :--- | :--- |
+| 🌱 김해원 | • 리서치 (Entity Marker, R-BERT) <br/> • 모델링 (Entity Marker, R-BERT) <br/> • Input data 형태 실험 <br/> • Label smoothing &emsp; |
+| 🌱 김혜빈 | • 코드 리뷰 <br/> • 데이터 불균형 문제 리서치 <br/> • 모델링 실험 <br/> • Focal Loss 적용 &emsp; |
+| 🌱 박준형 | • EDA <br/> • 데이터 증강 <br/> • Under Sampling <br/> • LR scheduler &emsp; |
+| 🌱 양봉석 | • EDA <br/> • 데이터 증강 <br/> • Under Sampling <br/> • LR scheduler &emsp; |
+| 🌱 이예령 | • 리서치 (ERACL) <br/> • 모델링 (Binary Loss, Pooling Layer) <br/> • 에러 분석 구현 (Confusion Matrix) &emsp; |
+
 
 # 프로젝트 구조
 
