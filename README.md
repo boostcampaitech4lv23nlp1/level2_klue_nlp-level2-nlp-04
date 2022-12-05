@@ -1,5 +1,3 @@
-# README
-
 # 프로젝트 개요
 
 ## RE Task
@@ -7,7 +5,7 @@
 > 관계 추출(Relation Extraction)은 문장의 단어(Entity)에 대한 속성과 관계를 예측하는 문제이다. 관계 추출은 지식 그래프 구축을 위한 핵심 구성 요소로, 구조화된 검색, 감정 분석, 질문 답변하기, 요약과 같은 자연어처리 응용 프로그램에서 중요하다. 비구조적인 자연어 문장에서 구조적인 triple을 추출해 정보를 요약하고, 중요한 성분을 핵심적으로 파악할 수 있다.
 > 
 
-![Untitled](README%202cd09064f02145aa8750911db73f6113/Untitled.png)
+![image](https://user-images.githubusercontent.com/101449496/205580342-65dc8275-59d2-478e-afbf-875762ce463d.png)
 
 ## 평가 지표
 
@@ -28,7 +26,7 @@
     - test_data.csv: 총 7765개 (정답 라벨 blind = 100으로 임의 표현)
 - **데이터 구조**
     
-    ![Untitled](README%202cd09064f02145aa8750911db73f6113/Untitled%201.png)
+    ![image](https://user-images.githubusercontent.com/101449496/205580403-79faf5dd-8451-403c-96c0-0d8797fc501c.png)
     
     - id : 문장에 대한 고유 id
     - sentence : 추론해야 할 entity 쌍이 있는 sentence
@@ -37,9 +35,14 @@
     - label : label 정보, 총 30개 classes로 분류
     - sourec : 샘플의 출처이며 policy_briefing / wikipedia / wikitree로 구성
 
+| 🌱 김해원 | 🌱 김혜빈 | 🌱 박준형 | 🌱 양봉석 | 🌱 이예령 |
+| :--- | :--- | :--- | :--- | :--- |
+| • 리서치 (Entity Marker, R-BERT) <br/> • 모델링 (Entity Marker, R-BERT) <br/> • Input data 형태 실험 <br/> • Label smoothing | • 코드 리뷰 <br/> • 데이터 불균형 문제 리서치 <br/> • 모델링 실험 <br/> • Focal Loss 적용 | • PM <br/> • 베이스라인 구축  <br/>  • 리서치 (AFL) <br/> | • EDA <br/> • 데이터 증강 <br/> • Under Sampling <br/> • LR scheduler | • 리서치 (ERACL) <br/> • 모델링 (Binary Loss, Pooling Layer) <br/> • 에러 분석 구현 (Confusion Matrix) |
+
 # 프로젝트 구조
 
-![Untitled](README%202cd09064f02145aa8750911db73f6113/Untitled%202.png)
+![image](https://user-images.githubusercontent.com/101449496/205580497-3c218016-1f10-4c54-8662-e162f8e50ba5.png)
+
 
 # 실험내역
 
@@ -101,7 +104,8 @@ python main.py -m -a -c my_config -s SavedModels/my_model.ckpt
     - 프로젝트에 대한 전체적인 challenge 및 문제 정의                ex) UNK 토큰 문제, 데이터 불균형 문제
     - 리서치 할 논문에 대한 전체적인 탐색 및 계획 세우기
     
-    ![Untitled](README%202cd09064f02145aa8750911db73f6113/Untitled%203.png)
+    ![image](https://user-images.githubusercontent.com/101449496/205580662-ea9e11a7-341d-471b-ab6f-f86ebfe7c71b.png)
+
     
 
 **다양한 리서치 및 효율적인 실험**
@@ -127,4 +131,7 @@ python main.py -m -a -c my_config -s SavedModels/my_model.ckpt
 
 # 랩업리포트
 
-[Wrap-up Report]([https://leeyeryeong.notion.site/KLUE-REPORT-60b06143abfa42bf8aff579212e13682](https://www.notion.so/KLUE-REPORT-60b06143abfa42bf8aff579212e13682))
+[Wrap-up Report](https://leeyeryeong.notion.site/KLUE-REPORT-60b06143abfa42bf8aff579212e13682)
+
+
+
