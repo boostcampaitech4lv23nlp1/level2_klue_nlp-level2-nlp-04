@@ -34,7 +34,8 @@
     - object_entity : word, start_idx, end_idx, type 정보로 구성
     - label : label 정보, 총 30개 classes로 분류
     - sourec : 샘플의 출처이며 policy_briefing / wikipedia / wikitree로 구성
-
+<br/><br/><br/>
+# 팀 구성 및 역할
 | 이름 | 역할 |
 | :--- | :--- |
 | 🌱 김해원 | • 리서치 (Entity Marker, R-BERT) <br/> • 모델링 (Entity Marker, R-BERT) <br/> • Input data 형태 실험 <br/> • Label smoothing &emsp; |
@@ -43,12 +44,12 @@
 | 🌱 양봉석 | • EDA <br/> • 데이터 증강 <br/> • Under Sampling <br/> • LR scheduler &emsp; |
 | 🌱 이예령 | • 리서치 (ERACL) <br/> • 모델링 (Binary Loss, Pooling Layer) <br/> • 에러 분석 구현 (Confusion Matrix) &emsp; |
 
-
+<br/><br/><br/>
 # 프로젝트 구조
 
 ![image](https://user-images.githubusercontent.com/101449496/205580497-3c218016-1f10-4c54-8662-e162f8e50ba5.png)
 
-
+<br/><br/><br/>
 # 실험내역
 
 ### Data
@@ -79,6 +80,8 @@
 1. **K Fold**
 2. **Model Ensemble**
 
+<br/><br/><br/>
+
 # 실행코드
 
 ```python
@@ -91,8 +94,8 @@ python main.py -m i -c my_config -s SavedModels/my_model.ckpt
 # Analysis 
 python main.py -m -a -c my_config -s SavedModels/my_model.ckpt
 ```
-
-## 팀 회고
+<br/><br/><br/>
+# 팀 회고
 
 ### 다음 프로젝트에 해볼 시도
 
@@ -132,8 +135,8 @@ python main.py -m -a -c my_config -s SavedModels/my_model.ckpt
 - 결과가 좋았던 모델을 로컬에 계속 남기는 대신 허깅페이스 레포지토리에 공유해보자
 - 실험에 대한 리더보드 공유는 보다 정밀하게 구글의 스프레드시트를 활용해보자
 - wandb에 실험마다 project 및 name을 명확히하여 결과를 한눈에 볼 수 있도록 하자
-- 한 사람이 한 실험을 전적으로 맡아서 하는 것이 아니라 소통을 통해 대조 실험을 병렬적으로 진행하여 서버의 유휴시간을 최소화 해보자 (실험이 시간에 쫓기는 경우가 많아 한 실험을 제대로 끝마치지 못한 경우가 많았음)
-
+- 한 사람이 한 실험을 전적으로 맡아서 하는 것이 아니라 소통을 통해 대조 실험을 병렬적으로 진행하여 서버의 유휴시간을 최소화 해보자
+<br/><br/><br/>
 # 랩업리포트
 
 [Wrap-up Report](https://leeyeryeong.notion.site/KLUE-REPORT-60b06143abfa42bf8aff579212e13682)
